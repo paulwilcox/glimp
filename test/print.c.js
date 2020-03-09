@@ -1,4 +1,4 @@
-import { print } from '../src/face.js';
+import { print } from '../src/glimp.js';
 
 let samples = [
 

@@ -19,9 +19,9 @@ fs.writeFileSync(
 )
 
 export default [{
-    input: 'src/face.js',
+    input: 'src/glimp.js',
     output: {
-        file: 'dist/face.js',
+        file: 'dist/glimp.js',
         format: 'cjs'
     },
     plugins: licensePlugin
