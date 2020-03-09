@@ -1,6 +1,6 @@
 {
   "name": "glimp",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Visualization and interface tools for javascript.",
   "main": "face.js",
   "directories": {
