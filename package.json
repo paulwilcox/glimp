@@ -1,0 +1,22 @@
+{
+  "name": "face",
+  "version": "0.0.0",
+  "description": "Visualization and interface tools for javascript.",
+  "main": "face.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "visualization",
+    "table"
+  ],
+  "author": "Paul Wilcox",
+  "license": "ISC",
+  "devDependencies": {
+    "rollup": "^2.0.2",
+    "rollup-plugin-license": "^0.13.0"
+  }
+}
