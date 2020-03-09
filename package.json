@@ -1,6 +1,6 @@
 {
   "name": "face",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "Visualization and interface tools for javascript.",
   "main": "face.js",
   "directories": {
