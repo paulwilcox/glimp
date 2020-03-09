@@ -1,4 +1,4 @@
-import {print} from "../src/printer.js";
+import { print } from '../src/face.js';
 
 let samples = [
 

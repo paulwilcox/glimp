@@ -1,7 +1,7 @@
-import printerCss from './printer.css.js';
+import printCss from './print.css.js';
 import { addPagerToTables, addAnchorClickEvents } from './pager.js';
 
-export function print(target, obj, caption) {
+export default function (target, obj, caption) {
 
     addDefaultCss();
     addAnchorClickEvents();
@@ -169,7 +169,7 @@ function addDefaultCss () {
     let style = document.createElement('style');
     style.type = 'text/css';
 
-    style.appendChild(document.createTextNode(printerCss));
+    style.appendChild(document.createTextNode(printCss));
     document.head.appendChild(style);
 
 }
