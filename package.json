@@ -1,6 +1,6 @@
 {
   "name": "face",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Visualization and interface tools for javascript.",
   "main": "face.js",
   "directories": {
@@ -10,8 +10,8 @@
     "gitPublish": "node_scripts\\gitPublish.cmd"
   },
   "repository": {
-      "type": "git",
-      "url": "https://github.com/paulwilcox/face"
+    "type": "git",
+    "url": "https://github.com/paulwilcox/face"
   },
   "keywords": [
     "visualization",
