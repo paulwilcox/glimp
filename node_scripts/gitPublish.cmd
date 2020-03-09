@@ -1,1 +1,1 @@
-git push https://github.com/paulwilcox/face master
+git push https://github.com/paulwilcox/glimp master
