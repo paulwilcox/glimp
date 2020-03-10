@@ -22,7 +22,7 @@ export default [{
     input: 'src/glimp.js',
     output: {
         file: 'dist/glimp.js',
-        format: 'cjs'
+        format: 'esm'
     },
     plugins: licensePlugin
 }];
