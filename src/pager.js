@@ -86,6 +86,7 @@ function anchorOnClick(e) {
         : parseInt(rel) + 1;
 
     changeToPage(table, toPage);
+    e.preventDefault();
 
 }
 
