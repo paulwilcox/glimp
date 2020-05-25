@@ -287,10 +287,17 @@ function addPageInputListeners (table) {
 
 function changeToPage(table, page) {
 
+    let pages = tableGet(table, 'pages');
     let startItem = (page - 1) * tableGet(table, 'rowsPerPage');
     let endItem = startItem + tableGet(table, 'rowsPerPage');
     let pageAs = table.querySelectorAll('.glimpPageDiv a');
     let tBodyRows = [...table.tBodies].reduce((a,b) => a.concat(b)).rows;
+
+    // prevent going over or under pages possible
+    page = page > pages ? pages
+         : page === undefined ? pages 
+         : page < 1 ? 1
+         : page; 
 
     for (let pix = 0; pix < pageAs.length; pix++) {
 
