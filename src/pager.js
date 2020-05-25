@@ -44,7 +44,7 @@ export function addPagerToTable(
 
     table.createTFoot().insertRow().innerHTML = `
         <td colspan=${colCount}>
-            <div class="oneQueryPageDiv"></div>
+            <div class="glimpPageDiv"></div>
         </td>
     `;
 
@@ -61,7 +61,7 @@ export function addAnchorClickEvents () {
         return;
 
     document.addEventListener('click', e => {
-        if (!e.target.classList.contains('.oneQueryAnchor'))
+        if (!e.target.classList.contains('.glimpAnchor'))
             return;
         anchorOnClick(e);
     });
@@ -72,7 +72,7 @@ export function addAnchorClickEvents () {
 
 function anchorOnClick(e) {
 
-    let table = e.target.closest('.oneQueryTable')
+    let table = e.target.closest('.glimpTable')
     let cPage = currentPage(table);
     let hasLt = e.target.innerHTML.substring(0,3) == '&lt';
     let hasGt = e.target.innerHTML.substring(0,3) == '&gt';
@@ -92,12 +92,12 @@ function anchorOnClick(e) {
 
 function insertPageLinks(table) {
 
-    let pageDiv = table.querySelector('.oneQueryPageDiv');
+    let pageDiv = table.querySelector('.glimpPageDiv');
 
     let insertA = (rel,innerHtml) =>
         pageDiv.insertAdjacentHTML(
             'beforeend',
-            `<a href='#' rel="${rel}" class='.oneQueryAnchor'>${innerHtml}</a> ` 
+            `<a href='#' rel="${rel}" class='.glimpAnchor'>${innerHtml}</a> ` 
         );
 
     insertA(0,'<');
@@ -113,7 +113,7 @@ function insertPageLinks(table) {
 
 function insertPageInput(table) {
 
-    let pageDiv = table.querySelector('.oneQueryPageDiv');
+    let pageDiv = table.querySelector('.glimpPageDiv');
 
     if (tableGet(table, 'pages') < tableGet(table, 'pageInputThreshold'))
         return;
@@ -122,11 +122,11 @@ function insertPageInput(table) {
         'beforeend',
         `
             <br/>
-            <div class='oneQueryPageInputDiv' style='display:none;'>
-                <div contenteditable='true' class='oneQueryPageInput'>1</div>
-                <button class='oneQueryPageInputSubmit'></button>
+            <div class='glimpPageInputDiv' style='display:none;'>
+                <div contenteditable='true' class='glimpPageInput'>1</div>
+                <button class='glimpPageInputSubmit'></button>
             </div>
-            <label class='oneQueryPageRatio'>
+            <label class='glimpPageRatio'>
                 ${tableGet(table, 'pages')} pages
             </label>
         `
@@ -135,17 +135,17 @@ function insertPageInput(table) {
 }
 
 function showInputDiv (tbl, show) {
-    if (!tbl.tFoot.querySelector('.oneQueryPageInputDiv'))
+    if (!tbl.tFoot.querySelector('.glimpPageInputDiv'))
         return;
-    tbl.tFoot.querySelector('.oneQueryPageInputDiv').style.display = 
+    tbl.tFoot.querySelector('.glimpPageInputDiv').style.display = 
         show ? 'inline-block' : 'none';
-    tbl.tFoot.querySelector('.oneQueryPageRatio').style.display = 
+    tbl.tFoot.querySelector('.glimpPageRatio').style.display = 
         show ? 'none' : 'inline-block';
 }
 
 function addPageInputListeners (table) {
 
-    if (!table.tFoot.querySelector('.oneQueryPageInputDiv'))
+    if (!table.tFoot.querySelector('.glimpPageInputDiv'))
         return;
 
     let listen = (selector, event, callback) => 
@@ -154,24 +154,24 @@ function addPageInputListeners (table) {
 
     table.addEventListener('mouseleave', e => {
         showInputDiv(e.target, false);
-        table.querySelector('.oneQueryPageInput').innerHTML = "";
+        table.querySelector('.glimpPageInput').innerHTML = "";
     });
 
-    listen('.oneQueryPageRatio', 'mouseenter',
+    listen('.glimpPageRatio', 'mouseenter',
         e => showInputDiv(table, true)
     );
 
-    listen('.oneQueryPageRatio', 'click',
+    listen('.glimpPageRatio', 'click',
         e => showInputDiv(table, true)
     );
 
-    listen('.oneQueryPageInput', 'mouseenter',
-        e => table.querySelector('.oneQueryPageInput').innerHTML = ''
+    listen('.glimpPageInput', 'mouseenter',
+        e => table.querySelector('.glimpPageInput').innerHTML = ''
     );
 
-    listen('.oneQueryPageInputSubmit', 'click', e => {
+    listen('.glimpPageInputSubmit', 'click', e => {
 
-        let pInput = table.querySelector('.oneQueryPageInput');
+        let pInput = table.querySelector('.glimpPageInput');
         let desiredPage = parseInt(pInput.innerHTML);
 
         if (isNaN(desiredPage)) {
@@ -189,7 +189,7 @@ function changeToPage(table, page) {
 
     let startItem = (page - 1) * tableGet(table, 'rowsPerPage');
     let endItem = startItem + tableGet(table, 'rowsPerPage');
-    let pageAs = table.querySelectorAll('.oneQueryPageDiv a');
+    let pageAs = table.querySelectorAll('.glimpPageDiv a');
     let tBodyRows = [...table.tBodies].reduce((a,b) => a.concat(b)).rows;
 
     for (let pix = 0; pix < pageAs.length; pix++) {
@@ -220,7 +220,7 @@ function changeToPage(table, page) {
 
 function currentPage (table) {
     return parseInt(
-        table.querySelector('.oneQueryPageDiv a.active').innerHTML
+        table.querySelector('.glimpPageDiv a.active').innerHTML
     );
 }
 
