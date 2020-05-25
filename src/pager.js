@@ -79,10 +79,10 @@ function anchorOnClick(e) {
     let rel = e.target.rel;
 
     let toPage = 
-        (hasLt && cPage == 1) ? table.pages
-        : (hasGt && cPage == table.pages) ? 1
-        : (hasLt && rel < 0) ? cPage - 1
-        : (hasGt && rel < 0) ? cPage + 1
+        hasLt && cPage == 1 ? tableGet(table, 'pages')
+        : hasGt && cPage == tableGet(table, 'pages') ? 1
+        : hasLt && rel < 0 ? cPage - 1
+        : hasGt && rel < 0 ? cPage + 1
         : parseInt(rel) + 1;
 
     changeToPage(table, toPage);
