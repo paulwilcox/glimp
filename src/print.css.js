@@ -1,31 +1,31 @@
 export default `
 
 
-.oneQueryString {
+.glimpString {
     color: #FF9900;
 }
 
-.oneQueryNumber {
+.glimpNumber {
     color: #0088cc;
 }
 
-.oneQueryNuloneQuery {
+.glimpNull {
     color: gainsboro;
     font-style: italic;
 }
 
-.oneQueryFunc {
+.glimpFunc {
     color: BB5500;
     font-family: monospace;
 }
 
-.oneQueryTable {
+.glimpTable {
     border: 2px solid #0088CC;
     border-collapse: collapse;
     margin: 5px;
 }
 
-.oneQueryTable caption {
+.glimpTable caption {
     border: 1px solid #0088CC;
     background-color: #0088CC;
     color: white;
@@ -33,45 +33,45 @@ export default `
     padding: 3px;
 }
 
-.oneQueryTable th {
+.glimpTable th {
     background-color: gainsboro;
     border: 1px solid #C8C8C8;
     padding: 3px;
 }
 
-.oneQueryTable td {
+.glimpTable td {
     border: 1px solid #C8C8C8;
     text-align: center;
     vertical-align: middle;
     padding: 3px;
 }
 
-.oneQueryTable tFoot {
+.glimpTable tFoot {
     background-color: whitesmoke;
     font-style: italic;
     color: teal;
 }
 
-.oneQueryTable tFoot a {
+.glimpTable tFoot a {
     text-decoration: none;
     color: teal;
 }
 
-.oneQueryTable tFoot a.active {
+.glimpTable tFoot a.active {
     text-decoration: underline;
 }
 
-.oneQueryPageDiv {
+.glimpPageDiv {
     text-align: left;
     vertical-align: middle;
     font-size: smaller;
 }
 
-.oneQueryPageInputDiv * {
+.glimpPageInputDiv * {
     display: inline-block;
 }
 
-.oneQueryPageInput {
+.glimpPageInput {
     padding: 1px 3px;
     background-color: white;
     border: solid 1px blue;
@@ -80,7 +80,7 @@ export default `
     min-width: 15px;
 }
 
-.oneQueryPageInputSubmit {
+.glimpPageInputSubmit {
     height: 10px;
     width: 10px;
     margin: 0;

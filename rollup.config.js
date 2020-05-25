@@ -5,11 +5,11 @@ import fs from 'fs';
 // array.  Otherwise, the third party licence file gets 
 // overwritten, not appended to.
 let licensePlugin = license({
-    banner: { content: { file: 'license.md' } },
+    banner: { content: { file: 'license.md' } }/*,
     thirdParty: {
         output: 'license-3rd-party',
         includePrivate: true
-    }
+    }*/
 });
 
 let printCss = fs.readFileSync('./src/print.css');

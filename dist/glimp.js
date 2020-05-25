@@ -10,31 +10,31 @@
 var printCss = `
 
 
-.oneQueryString {
+.glimpString {
     color: #FF9900;
 }
 
-.oneQueryNumber {
+.glimpNumber {
     color: #0088cc;
 }
 
-.oneQueryNuloneQuery {
+.glimpNull {
     color: gainsboro;
     font-style: italic;
 }
 
-.oneQueryFunc {
+.glimpFunc {
     color: BB5500;
     font-family: monospace;
 }
 
-.oneQueryTable {
+.glimpTable {
     border: 2px solid #0088CC;
     border-collapse: collapse;
     margin: 5px;
 }
 
-.oneQueryTable caption {
+.glimpTable caption {
     border: 1px solid #0088CC;
     background-color: #0088CC;
     color: white;
@@ -42,45 +42,45 @@ var printCss = `
     padding: 3px;
 }
 
-.oneQueryTable th {
+.glimpTable th {
     background-color: gainsboro;
     border: 1px solid #C8C8C8;
     padding: 3px;
 }
 
-.oneQueryTable td {
+.glimpTable td {
     border: 1px solid #C8C8C8;
     text-align: center;
     vertical-align: middle;
     padding: 3px;
 }
 
-.oneQueryTable tFoot {
+.glimpTable tFoot {
     background-color: whitesmoke;
     font-style: italic;
     color: teal;
 }
 
-.oneQueryTable tFoot a {
+.glimpTable tFoot a {
     text-decoration: none;
     color: teal;
 }
 
-.oneQueryTable tFoot a.active {
+.glimpTable tFoot a.active {
     text-decoration: underline;
 }
 
-.oneQueryPageDiv {
+.glimpPageDiv {
     text-align: left;
     vertical-align: middle;
     font-size: smaller;
 }
 
-.oneQueryPageInputDiv * {
+.glimpPageInputDiv * {
     display: inline-block;
 }
 
-.oneQueryPageInput {
+.glimpPageInput {
     padding: 1px 3px;
     background-color: white;
     border: solid 1px blue;
@@ -89,7 +89,7 @@ var printCss = `
     min-width: 15px;
 }
 
-.oneQueryPageInputSubmit {
+.glimpPageInputSubmit {
     height: 10px;
     width: 10px;
     margin: 0;
@@ -186,6 +186,7 @@ function anchorOnClick(e) {
         : parseInt(rel) + 1;
 
     changeToPage(table, toPage);
+    e.preventDefault();
 
 }
 
@@ -348,7 +349,7 @@ function print (target, obj, caption) {
 
     let maybeTables = 
         document.querySelector(target)
-        .querySelectorAll('.oneQueryTable');
+        .querySelectorAll('.glimpTable');
 
     if (maybeTables.length > 0)
         addPagerToTables(maybeTables);        
@@ -362,8 +363,8 @@ function makeHtml(obj, caption) {
     return printType == 'arrayOfObjects' ? arrayOfObjectsToTable(obj, caption)
         : printType == 'array' ? arrayToTable(obj, caption)
         : printType == 'string' ? stringToHtml(obj)
-        : printType == 'number' ? `<span class='oneQueryNumber'>${obj}</span>`
-        : printType == 'nuloneQuery' ? `<span class='oneQueryNuloneQuery'>${obj}</span>`
+        : printType == 'number' ? `<span class='glimpNumber'>${obj}</span>`
+        : printType == 'null' ? `<span class='glimpNull'>${obj}</span>`
         : printType == 'function' ? functionToHtml(obj)
         : printType == 'object' ? objectToTable(obj)
         : `${obj}`;
@@ -386,7 +387,7 @@ function getPrintType (obj) {
 
     return isArrayOfObjects ? 'arrayOfObjects'
         : isArray ? 'array'
-        : (obj == null || typeof obj == 'undefined') ? 'nuloneQuery'
+        : (obj == null || typeof obj == 'undefined') ? 'null'
         : typeof obj;
 
 }
@@ -409,7 +410,7 @@ function getArrayKeys (array) {
 
 function stringToHtml (str) {
     return `
-        <span class='oneQueryString'>
+        <span class='glimpString'>
             ${ htmlEncode(str) }
         </span>
     `;
@@ -417,7 +418,7 @@ function stringToHtml (str) {
 
 function functionToHtml (func) {
     return `
-        <span class='oneQueryFunc'>
+        <span class='glimpFunc'>
             ${ htmlEncode(func.toString()) }
         </span>
     `;
@@ -435,7 +436,7 @@ function objectToTable (obj) {
         </tr>
         `;
 
-    return `<table class='oneQueryTable'>${html}</table>`;
+    return `<table class='glimpTable'>${html}</table>`;
 
 }
 
@@ -447,7 +448,7 @@ function arrayToTable (items, caption) {
         html += `<tr><td>${makeHtml(item)}</td></tr>`;
 
     return `
-        <table class='oneQueryTable'>
+        <table class='glimpTable'>
             ${caption != null ? `<caption>${caption}</caption>` : ''}
             ${html}
         </table>`;
@@ -476,7 +477,7 @@ function arrayOfObjectsToTable (objects, caption) {
     }
 
     return `
-        <table class='oneQueryTable'>
+        <table class='glimpTable'>
             ${caption != null ? `<caption>${caption}</caption>` : ''}
             <tHead>${header}</tHead>
             <tBody>${body}</tBody>
@@ -499,7 +500,7 @@ function htmlEncode (str) {
 
 function addDefaultCss () {
 
-    if (hasoneQueryCssRule())
+    if (hasglimpCssRule())
         return;
 
     let style = document.createElement('style');
@@ -510,11 +511,11 @@ function addDefaultCss () {
 
 }
 
-function hasoneQueryCssRule () {
+function hasglimpCssRule () {
 
     for(let sheet of document.styleSheets)
     for(let rule of sheet.rules)
-        if(rule.selectorText.substring(0,5) == ".oneQuery")
+        if(rule.selectorText.substring(0,5) == ".glimp")
             return true;
 
     return false; 
