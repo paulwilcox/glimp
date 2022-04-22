@@ -179,10 +179,10 @@ function anchorOnClick(e) {
     let rel = e.target.rel;
 
     let toPage = 
-        (hasLt && cPage == 1) ? table.pages
-        : (hasGt && cPage == table.pages) ? 1
-        : (hasLt && rel < 0) ? cPage - 1
-        : (hasGt && rel < 0) ? cPage + 1
+        hasLt && cPage == 1 ? tableGet(table, 'pages')
+        : hasGt && cPage == tableGet(table, 'pages') ? 1
+        : hasLt && rel < 0 ? cPage - 1
+        : hasGt && rel < 0 ? cPage + 1
         : parseInt(rel) + 1;
 
     changeToPage(table, toPage);
@@ -287,17 +287,10 @@ function addPageInputListeners (table) {
 
 function changeToPage(table, page) {
 
-    let pages = tableGet(table, 'pages');
     let startItem = (page - 1) * tableGet(table, 'rowsPerPage');
     let endItem = startItem + tableGet(table, 'rowsPerPage');
     let pageAs = table.querySelectorAll('.glimpPageDiv a');
     let tBodyRows = [...table.tBodies].reduce((a,b) => a.concat(b)).rows;
-
-    // prevent going over or under pages possible
-    page = page > pages ? pages
-         : page === undefined ? pages 
-         : page < 1 ? 1
-         : page; 
 
     for (let pix = 0; pix < pageAs.length; pix++) {
 
