@@ -339,7 +339,7 @@ function tableGet(
     return parseInt(table.getAttribute(`data-${dataAttributeName}`));
 }
 
-function print (target, obj, caption) {
+function print$1 (target, obj, caption) {
 
     addDefaultCss();
     addAnchorClickEvents();
@@ -521,5 +521,7 @@ function hasglimpCssRule () {
     return false; 
 
 }
+
+let print = print$1;
 
 export { print };
