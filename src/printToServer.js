@@ -40,69 +40,42 @@ function normalize (
     limit = 50
 ) {
 
-    if (self.isToStringOverwritten(obj)) 
-        return obj.toString();
+    // if (self.isToStringOverwritten(obj)) 
+    //    return obj.toString();
 
-    let objIsTabular = this.isTabular(obj);
+    let objKeys = tryObjectKeys(obj, null);
 
-    let props = [];
-    let vals = [];
+    // If it's primitive, no need to normalize, nor to clone
+    if(!Array.isArray && objKeys === null)
+        return obj;
+    
+    // If keyed object, convert to table
+    if (objKeys !== null)
+        obj = Object.entries(obj).map(entry => ({ key: entry[0], value: entry[1] }));
 
-    if (obj.length == 0) {
-        obj = [{ empty: '' }];
-        headers = false;
-    }
+    // If non-tablular array, make trivially tabular
+    if (Array.isArray && !isTabular(obj)) 
+        obj = obj.map(row => ({ value: row }));
 
-    let toStrings = (val) => val.toString().split(`\r\n`);
+// TODO: we may have to merge with isTabular, because we need 
+// those registered properties in order to identify the excess.
 
-    for(let r = 0; r < obj.length; r++) {
+    let propRegistry = new Set();
+    let normalizedRows = [];
+
+    for(
+        let r = 0; 
+        r < obj.length, r < limit; 
+        r++
+    ) {
         
-        if (r >= limit)
-            break;
+        // register new props (keeping order of original)
+        for(let rowProp of Object.keys(row)) 
+            propRegistry.add(rowProp);
 
-        let row = 
-              !objIsTabular ? obj[r]
-            : obj[r] !== null 
-              obj[r] == null ? '<null>'
-            : typeof(row) == 'object';
-        if (row == null)
-            row = '<null>';
-        else if (typeof row === 'object') 
-            row = self.noUndefined(row);
-        else 
-            row = { '<primitive>': row }; 
-
-        let rowVals = [];
-        let rowProps = Object.getOwnPropertyNames(row);
-
-        // force the order of props in previous rows
-        for(let i = 0; i < props.length; i++) {
-            let prop = props[i];
-            let arrayVal = toStrings(row[prop]);
-            rowVals.push(arrayVal);
-        }
-
-        // add new props if not previously known
-        for(let i = 0; i < rowProps.length; i++) {
-            let prop = rowProps[i];
-            let arrayVal = toStrings(row[prop]);
-
-            if (!props.includes(prop)) {
-                props.push(prop);
-                rowVals.push(arrayVal);
-            }
-        }
-
-        // spread out the arrayVals into different lines
-        // [['one line'],['two','lines']] becomes 
-        // [['one line', 'two'], ['', 'lines']]
-        let maxLen = Math.max(...rowVals.map(arrayVal => arrayVal.length));
-        for(let i = 0; i < maxLen; i++) {
-            let flattened = [];
-            for (let arrayVal of rowVals) 
-                flattened.push(arrayVal[i] || '');
-            vals.push(flattened);
-        }
+        let row = obj[r];
+        let rowVals = propRegistry.map(prop => row[prop]);
+        normalizedRows.push(rowVals);
 
     }    
 }
@@ -111,36 +84,42 @@ function normalize (
 // Determine if an array is structured like a table
 function isTabular (obj) {
 
+    // Primitives cannot be turned into tables
     if (!Array.isArray(obj))
         return false;       
 
-    // Tally the # of times a key appears 
-    // in a potentially tabular array.   
+    // Tally the # of times a key appears in a potentially tabular array.   
     let keyAppearences = {};
     for(let item of obj) 
-    for(let key of tryObjectKeys(item))
+    for(let key of tryObjectKeys(item, []))
         if(keyAppearences[key])
             keyAppearences[key] += 1;
         else 
             keyAppearences[key] = 1;
     
-
+    // Just get the tallies, not the associated keys
     let keyAppearenceValues = Object.values(arrayKeyAppearances(obj));
-    if (keyAppearenceValues == 0)
+    if (keyAppearenceValues.length == 0)
         return false;
 
-    let highlyUsedKeys = keyAppearenceValues.filter(kc => kc >= obj.length * 0.75).length;
-    let isHighlyStructured = highlyUsedKeys >= keyAppearenceValues.length * 0.75;
+    let highlyUsedKeyCounts = keyAppearenceValues.filter(kc => kc >= obj.length * 0.75).length;
+    let isHighlyStructured = highlyUsedKeyCounts >= keyAppearenceValues.length * 0.75;
     return isHighlyStructured;
 
 }
 
-function tryObjectKeys (obj) {
+// Return the keys of a non-primitive, non-array object.
+function tryObjectKeys (
+    obj, 
+    nonObjectOutput // usually either 'null' or '[]' 
+) {
     try {
+        if (Array.isArray(obj))
+            return nonObjectOutput;
         return Object.keys(obj);
     }
     catch {
-        return [];
+        return nonObjectOutput;
     }
 }
 
