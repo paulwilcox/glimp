@@ -1,110 +1,78 @@
-export default function makeString(
-    obj, 
-    options = {
-        caption: null,
-        preferEmptyString: true, // if false, '<null>' and '<undefined>' can show 
-        arrayLimit: 50 // max rows returned for any given array
-    }
-) {
 
-    let objType = typeof(obj);
-
-    return isTabular(obj) ? tableToString(obj, caption)
-        : Array.isArray(obj) ? arrayToTable(obj, caption)
-        : obj == null ? '<null>' 
-        : obj == undefined ? '<undefined>'
-        : objType == 'string' ? obj
-        : objType == 'number' ? obj.toString()
-        : obj == 'function' ? functionToHtml(obj)
-        : obj.toString()
-
-}
-
-// TODO: we probably want to normalize objects first,
-// then operate on the normalized object.
-//
-// If object, convert to table with cols 'key' and 'value'
-// If non-tabular array, make 'values' column and put in values
-// If tabular array (75% of keys appears in > 75% of rows), 
-//    - Make columns for well-structured keys
-//    - Make 'value' column for items not fitting into structure.
-//       > If array element is non-object or object with no 
-//         well structured properties, output the element 
-//       > If object with some well structured properties, 
-//         output those into respective columns, and for the 
-//       > excess, place into own object in values column 
-//       > prefixed with '...' (e.g. "{ ... d: 'dee', e: 'ea' }")
-// Else just output string rep
+// TODO: Deal with circular references.
+// Option to not convert objects to tables (but still clone them)
+// Allow and respect custom normalize function on objects.
 function normalize (
     obj, 
-    limit = 50
+    options = {
+        maxRows: 50, // maximum number of rows to print if it's an array
+        highlyUsedKeyProp: 0.75, // 'highly used' keys are found at this rate in rows
+        highlyStructuredArrayProp: 0.75, // rate of 'highly used' keys to be 'highly structured'
+        highlyUsedKeyCount: 10, // 'highly used' keys are found at this # in rows
+        highlyStructuredArrayCount: 2, // # of 'highly used' keys to be 'highly structured'
+    }
 ) {
-
-    // if (self.isToStringOverwritten(obj)) 
-    //    return obj.toString();
 
     let objKeys = tryObjectKeys(obj, null);
 
     // If it's primitive, no need to normalize, nor to clone
-    if(!Array.isArray && objKeys === null)
+    if(!Array.isArray(obj) && objKeys === null)
         return obj;
-    
-    // If keyed object, convert to table
+
+    // If keyed object, convert to array.  
+    // Otherwise it should already be an array
     if (objKeys !== null)
         obj = Object.entries(obj).map(entry => ({ key: entry[0], value: entry[1] }));
 
-    // If non-tablular array, make trivially tabular
-    if (Array.isArray && !isTabular(obj)) 
-        obj = obj.map(row => ({ value: row }));
-
-// TODO: we may have to merge with isTabular, because we need 
-// those registered properties in order to identify the excess.
-
-    let propRegistry = new Set();
-    let normalizedRows = [];
-
-    for(
-        let r = 0; 
-        r < obj.length, r < limit; 
-        r++
-    ) {
-        
-        // register new props (keeping order of original)
-        for(let rowProp of Object.keys(row)) 
-            propRegistry.add(rowProp);
-
-        let row = obj[r];
-        let rowVals = propRegistry.map(prop => row[prop]);
-        normalizedRows.push(rowVals);
-
-    }    
-}
-
-
-// Determine if an array is structured like a table
-function isTabular (obj) {
-
-    // Primitives cannot be turned into tables
-    if (!Array.isArray(obj))
-        return false;       
-
-    // Tally the # of times a key appears in a potentially tabular array.   
-    let keyAppearences = {};
+    // Tally the # of times a key appears in a potentially tabular array.
+    // This also tracks order, though with javascript internal logic   
+    let arrayKeys = {};
     for(let item of obj) 
     for(let key of tryObjectKeys(item, []))
-        if(keyAppearences[key])
-            keyAppearences[key] += 1;
+        if(!arrayKeys[key])
+            arrayKeys[key] = { n: 1, order: arrayKeys.length };
         else 
-            keyAppearences[key] = 1;
+            arrayKeys[key].n += 1;
     
-    // Just get the tallies, not the associated keys
-    let keyAppearenceValues = Object.values(arrayKeyAppearances(obj));
-    if (keyAppearenceValues.length == 0)
-        return false;
+    // Convert to array and append more info 
+    arrayKeys = 
+        Object.entries(arrayKeys)
+        .sort(entry => entry[1].order)
+        .map(entry => ({
+            key: entry[0],
+            n: entry[1].n,
+            isHighlyUsed: 
+                   entry[1].n >= options.highlyUsedKeyCount
+                || entry[1].n >= arrayKeys.length * options.highlyUsedKeyProp
+        }));
 
-    let highlyUsedKeyCounts = keyAppearenceValues.filter(kc => kc >= obj.length * 0.75).length;
-    let isHighlyStructured = highlyUsedKeyCounts >= keyAppearenceValues.length * 0.75;
-    return isHighlyStructured;
+    // Identify as highly structured or not
+    let highlyUsedKeyCount = arrayKeys.filter(k => k.isHighlyUsed).length; 
+    let isHighlyStructured = 
+           highlyUsedKeyCount >= arrayKeys.length * options.highlyStructuredArrayProp
+        || highlyUsedKeyCount >= options.highlyStructuredArrayCount;
+            
+    // If not highly structured, just return it as a regular array
+    if (!isHighlyStructured) 
+        obj = obj.map(row => normalize(row));
+
+    // Normalized the structured table.
+    // Put non-structured properties into a '...' column.
+    let highlyUsedArrayKeys = arrayKeys.filter(key => key.isHighlyUsed);
+    let lowlyUsedArrayKeys = arrayKeys.filter(key => !key.isHighlyUsed);
+    let table = [];
+    for (
+        let r = 0; 
+        r <= obj.length && r <= options.maxRows; 
+        r++
+    ) {
+        let row = obj[r];
+        table.push({
+            ...highlyUsedArrayKeys.map(key => normalize(row[key])),
+            '...': lowlyUsedArrayKeys.map(key => normalize(row[key])) 
+        });
+    }
+    return table;
 
 }
 
@@ -114,6 +82,8 @@ function tryObjectKeys (
     nonObjectOutput // usually either 'null' or '[]' 
 ) {
     try {
+        if (typeof(obj) === 'string' || obj instanceof String)
+            return nonObjectOutput;
         if (Array.isArray(obj))
             return nonObjectOutput;
         return Object.keys(obj);
@@ -286,3 +256,5 @@ function tableToString (
 
 }
 */
+
+module.exports.normalize = normalize;

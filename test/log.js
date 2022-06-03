@@ -1,3 +1,4 @@
+let printToServer = require('../src/printToServer.js');
 
 class complex {
 
@@ -18,6 +19,6 @@ class complex {
 
 let c = new complex();
 
-console.log(c.array[0].c)
+console.log(printToServer.normalize(c.array[0]))
 
 
