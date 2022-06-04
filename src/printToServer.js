@@ -16,7 +16,10 @@ function glimpNormalize (
     if(circularTracked.has(obj))
         return '<circular>';
     circularTracked.add(obj);
-    let circularTrackedClone = () => new Set(circularTracked);
+    let circularTrackedClone = 
+        // otherwise, a single object exists and multiple 
+        // references that are non-circular are picked up.
+        () => new Set(circularTracked);  
 
     // Respect custom normalize logic
     if (obj && obj.glimpNormalize) {
