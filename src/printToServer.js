@@ -1,20 +1,36 @@
 
-// TODO: Deal with circular references.
-// Option to not convert objects to tables (but still clone them)
-function normalize (
+// TODO: Option to not convert objects to tables (but still clone them)
+function glimpNormalize (
     obj, 
     options = {
         maxRows: 50, // maximum number of rows to print if it's an array
         highlyUsedKeyProp: 0.75, // 'highly used' keys are found at this rate in rows
         highlyStructuredArrayProp: 0.75, // rate of 'highly used' keys to be 'highly structured'
         highlyUsedKeyCount: 10, // 'highly used' keys are found at this # in rows
-        highlyStructuredArrayCount: 2, // # of 'highly used' keys to be 'highly structured'
-    }
+        highlyStructuredArrayCount: 2 // # of 'highly used' keys to be 'highly structured'
+    },
+    circularTracked = new Set()
 ) {
 
+    // Circular reference management
+    if(circularTracked.has(obj))
+        return '<circular>';
+    circularTracked.add(obj);
+    let circularTrackedClone = () => new Set(circularTracked);
+
     // Respect custom normalize logic
-    if (obj.normalize)
-        return obj.normalize();
+    if (obj && obj.glimpNormalize) {
+        try {
+            return obj.glimpNormalize(options, circularTrackedClone());
+        }
+        catch(e) {
+            if (e.message == 'Maximum call stack size exceeded')
+                e.message += '\r\n' +  
+                    '    Infinite loop calling custom glimpNormzlize method.  \r\n' + 
+                    '    Is the "circularTracked" parameter properly utilized?\r\n';
+            throw (e);
+        }
+    }
 
     let objKeys = tryObjectKeys(obj, null);
 
@@ -60,7 +76,7 @@ function normalize (
             
     // If not highly structured, just return it as a regular array
     if (!isHighlyStructured) 
-        return obj.map(row => normalize(row));
+        return obj.map(row => glimpNormalize(row, options, circularTrackedClone()));
 
     // Normalize the structured table.
     // Put non-structured properties into a '...' column.
@@ -80,12 +96,21 @@ function normalize (
         let convertedRow = {};
         
         for (let item of highlyUsedArrayKeys) 
-            convertedRow[item.key] = normalize(row[item.key]);
+            convertedRow[item.key] = glimpNormalize(
+                row[item.key], 
+                options, 
+                circularTrackedClone()
+            );
 
         if (lowlyUsedArrayKeys.length > 0) 
             convertedRow['...'] = {};
         for (let item of lowlyUsedArrayKeys)
-            convertedRow['...'][item.key] = normalize(row[item.key]);
+            if (row[item.key])
+                convertedRow['...'][item.key] = glimpNormalize(
+                    row[item.key],
+                    options,
+                    circularTrackedClone()
+                );
 
         table.push(convertedRow);        
     }
@@ -276,4 +301,4 @@ function tableToString (
 }
 */
 
-module.exports.normalize = normalize;
+module.exports.glimpNormalize = glimpNormalize;
