@@ -1,7 +1,6 @@
 
 // TODO: Deal with circular references.
 // Option to not convert objects to tables (but still clone them)
-// Allow and respect custom normalize function on objects.
 function normalize (
     obj, 
     options = {
@@ -12,6 +11,10 @@ function normalize (
         highlyStructuredArrayCount: 2, // # of 'highly used' keys to be 'highly structured'
     }
 ) {
+
+    // Respect custom normalize logic
+    if (obj.normalize)
+        return obj.normalize();
 
     let objKeys = tryObjectKeys(obj, null);
 
@@ -57,7 +60,7 @@ function normalize (
             
     // If not highly structured, just return it as a regular array
     if (!isHighlyStructured) 
-        obj = obj.map(row => normalize(row));
+        return obj.map(row => normalize(row));
 
     // Normalize the structured table.
     // Put non-structured properties into a '...' column.
@@ -86,6 +89,8 @@ function normalize (
 
         table.push(convertedRow);        
     }
+    if (obj.caption)
+        table.caption = obj.caption;
     return table;
 
 }

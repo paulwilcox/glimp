@@ -11,14 +11,16 @@ class complex {
         ]
     }
     
-    toString() {
-        return this.array;
+    normalize() {
+        let normalized = printToServer.normalize(this.array);
+        normalized.caption = this.name;
+        return normalized;
     }
 
 }
 
 let c = new complex();
 
-console.log(printToServer.normalize(c.array))
+console.log(printToServer.normalize(c))
 
 
