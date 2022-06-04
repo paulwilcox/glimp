@@ -19,6 +19,6 @@ class complex {
 
 let c = new complex();
 
-console.log(printToServer.normalize(c.array[0]))
+console.log(printToServer.normalize(c.array))
 
 

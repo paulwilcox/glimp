@@ -34,19 +34,22 @@ function normalize (
         else 
             arrayKeys[key].n += 1;
     
-    // Convert to array and append more info 
+    // Convert to array  
     arrayKeys = 
         Object.entries(arrayKeys)
         .sort(entry => entry[1].order)
         .map(entry => ({
             key: entry[0],
-            n: entry[1].n,
-            isHighlyUsed: 
-                   entry[1].n >= options.highlyUsedKeyCount
-                || entry[1].n >= arrayKeys.length * options.highlyUsedKeyProp
+            n: entry[1].n
         }));
 
-    // Identify as highly structured or not
+    // Identify keys as highly used or not 
+    for(let item of arrayKeys) 
+        item.isHighlyUsed = 
+               item.n >= options.highlyUsedKeyCount
+            || item.n >= arrayKeys.length * options.highlyUsedKeyProp;
+
+    // Identify array as highly structured or not
     let highlyUsedKeyCount = arrayKeys.filter(k => k.isHighlyUsed).length; 
     let isHighlyStructured = 
            highlyUsedKeyCount >= arrayKeys.length * options.highlyStructuredArrayProp
@@ -56,21 +59,32 @@ function normalize (
     if (!isHighlyStructured) 
         obj = obj.map(row => normalize(row));
 
-    // Normalized the structured table.
+    // Normalize the structured table.
     // Put non-structured properties into a '...' column.
     let highlyUsedArrayKeys = arrayKeys.filter(key => key.isHighlyUsed);
     let lowlyUsedArrayKeys = arrayKeys.filter(key => !key.isHighlyUsed);
     let table = [];
+    table.columns = highlyUsedArrayKeys.map(item => item.key);
+    if (lowlyUsedArrayKeys.length > 0)
+        table.columns.push('...');
     for (
         let r = 0; 
-        r <= obj.length && r <= options.maxRows; 
+        r < obj.length && r < options.maxRows; 
         r++
     ) {
         let row = obj[r];
-        table.push({
-            ...highlyUsedArrayKeys.map(key => normalize(row[key])),
-            '...': lowlyUsedArrayKeys.map(key => normalize(row[key])) 
-        });
+
+        let convertedRow = {};
+        
+        for (let item of highlyUsedArrayKeys) 
+            convertedRow[item.key] = normalize(row[item.key]);
+
+        if (lowlyUsedArrayKeys.length > 0) 
+            convertedRow['...'] = {};
+        for (let item of lowlyUsedArrayKeys)
+            convertedRow['...'][item.key] = normalize(row[item.key]);
+
+        table.push(convertedRow);        
     }
     return table;
 
