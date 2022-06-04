@@ -19,8 +19,25 @@ class complex {
 
 }
 
-let c = new complex();
+//let c = new complex();
+// console.log(printToServer.normalize(c))
 
-console.log(printToServer.normalize(c))
 
+let a = { e: 1 };
+let b = { f: 2 };
+let c = [ a, b, b ];
+c.push(c);
+
+function circles (obj, alreadyReferenced = new Set()) {
+	if (alreadyReferenced.has(obj))
+  	throw 'its circular'
+	alreadyReferenced.add(obj);
+  console.log([...alreadyReferenced]);
+	if(Array.isArray(obj)) {
+  	for (let item of obj) 
+    	circles(item, new Set(alreadyReferenced));
+  }
+}
+
+circles (c)
 
