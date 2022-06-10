@@ -7,30 +7,34 @@ function glimpNormalize (
         highlyUsedKeyProp: 0.75, // 'highly used' keys are found at this rate in rows
         highlyStructuredArrayProp: 0.75, // rate of 'highly used' keys to be 'highly structured'
         highlyUsedKeyCount: 10, // 'highly used' keys are found at this # in rows
-        highlyStructuredArrayCount: 2 // # of 'highly used' keys to be 'highly structured'
+        highlyStructuredArrayCount: 2, // # of 'highly used' keys to be 'highly structured'
+        convertObjectsToTables: true, // objects can remain as is, or be converted to tables
+        _circularTracked: new Set()
     },
-    circularTracked = new Set()
 ) {
 
     // Circular reference management
-    if(circularTracked.has(obj))
+    if(options._circularTracked.has(obj))
         return '<circular>';
-    circularTracked.add(obj);
-    let circularTrackedClone = 
-        // otherwise, a single object exists and multiple 
+    options._circularTracked.add(obj);
+    let normalize = (obj) => {
+        // clone it, otherwise, a single list exists and multiple
         // references that are non-circular are picked up.
-        () => new Set(circularTracked);  
+        options._circularTracked = new Set(options._circularTracked);
+        return glimpNormalize(obj, options);
+    }
 
     // Respect custom normalize logic
     if (obj && obj.glimpNormalize) {
         try {
-            return obj.glimpNormalize(options, circularTrackedClone());
+            options._circularTracked = new Set(options._circularTracked);
+            return obj.glimpNormalize(options);
         }
         catch(e) {
             if (e.message == 'Maximum call stack size exceeded')
                 e.message += '\r\n' +  
                     '    Infinite loop calling custom glimpNormzlize method.  \r\n' + 
-                    '    Is the "circularTracked" parameter properly utilized?\r\n';
+                    '    Is the "_circularTracked" parameter properly utilized?\r\n';
             throw (e);
         }
     }
@@ -42,9 +46,20 @@ function glimpNormalize (
         return obj;
 
     // If keyed object, convert to array.  
-    // Otherwise it should already be an array
-    if (objKeys !== null)
-        obj = Object.entries(obj).map(entry => ({ key: entry[0], value: entry[1] }));
+    if (objKeys !== null) 
+        if (options.convertObjectsToTables) {
+            let clone = {};
+            for(let entry of Object.entries(obj)) 
+                clone[entry[0]] = normalize(entry[1]);
+            return clone;
+        }
+        else {
+            obj = Object.entries(obj).map(entry => ({ 
+                key: entry[0], 
+                value: normalize(entry[1]) 
+            }));
+        }
+        // At this point, we should always be dealing with an array
 
     // Tally the # of times a key appears in a potentially tabular array.
     // This also tracks order, though with javascript internal logic   
@@ -56,7 +71,7 @@ function glimpNormalize (
         else 
             arrayKeys[key].n += 1;
     
-    // Convert to array  
+    // Convert arrayKeys to array  
     arrayKeys = 
         Object.entries(arrayKeys)
         .sort(entry => entry[1].order)
@@ -79,7 +94,7 @@ function glimpNormalize (
             
     // If not highly structured, just return it as a regular array
     if (!isHighlyStructured) 
-        return obj.map(row => glimpNormalize(row, options, circularTrackedClone()));
+        return obj.map(row => normalize(row));
 
     // Normalize the structured table.
     // Put non-structured properties into a '...' column.
@@ -99,21 +114,13 @@ function glimpNormalize (
         let convertedRow = {};
         
         for (let item of highlyUsedArrayKeys) 
-            convertedRow[item.key] = glimpNormalize(
-                row[item.key], 
-                options, 
-                circularTrackedClone()
-            );
+            convertedRow[item.key] = normalize(row[item.key]);
 
         if (lowlyUsedArrayKeys.length > 0) 
             convertedRow['...'] = {};
         for (let item of lowlyUsedArrayKeys)
             if (row[item.key])
-                convertedRow['...'][item.key] = glimpNormalize(
-                    row[item.key],
-                    options,
-                    circularTrackedClone()
-                );
+                convertedRow['...'][item.key] = normalize(row[item.key]);
 
         table.push(convertedRow);        
     }
