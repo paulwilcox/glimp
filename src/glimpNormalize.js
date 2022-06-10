@@ -1,6 +1,5 @@
 
-// TODO: Option to not convert objects to tables (but still clone them)
-function glimpNormalize (
+module.exports = function glimpNormalize (
     obj, 
     options = {
         maxRows: 50, // maximum number of rows to print if it's an array
@@ -310,5 +309,3 @@ function tableToString (
 
 }
 */
-
-module.exports.glimpNormalize = glimpNormalize;

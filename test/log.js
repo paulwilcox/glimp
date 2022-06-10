@@ -1,4 +1,4 @@
-let printToServer = require('../src/printToServer.js');
+let glimpNormalize = require('../src/glimpNormalize.js');
 
 class complex {
 
@@ -11,8 +11,8 @@ class complex {
         ]
     }
     
-    glimpNormalize(options, circularTracked) {
-        let normalized = printToServer.glimpNormalize(this.array, options, circularTracked);
+    glimpNormalize(options) {
+        let normalized = glimpNormalize(this.array, options);
         normalized.caption = this.name;
         return normalized;
     }
@@ -20,4 +20,4 @@ class complex {
 }
 
 let c = new complex();
-console.log(printToServer.glimpNormalize(c))
+console.log(glimpNormalize(c))
