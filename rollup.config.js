@@ -18,12 +18,22 @@ fs.writeFileSync(
     `export default \`\n\n${printCss}\n\n\``
 )
 
-export default [{
-    input: 'src/glimp.js',
-    output: {
-        file: 'dist/glimp.js',
-        format: 'esm'
+export default [
+    {
+        input: 'src/glimp.client.js',
+        output: {
+            file: 'dist/glimp.client.js',
+            format: 'esm'
+        },
+        plugins: licensePlugin
     },
-    plugins: licensePlugin
-}];
+    {
+        input: 'src/glimp.server.js',
+        output: {
+            file: 'dist/glimp.server.js',
+            format: 'cjs'
+        },
+        plugins: licensePlugin
+    }    
+];
 

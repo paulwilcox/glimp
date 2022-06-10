@@ -1,4 +1,4 @@
-let glimpNormalize = require('../src/glimpNormalize.js');
+let glimpNormalize = require('../dist/glimp.server.js').glimpNormalize;
 
 class complex {
 
