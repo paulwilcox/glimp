@@ -1,4 +1,8 @@
 
+// TODO: make logic of when to put in 'caption' property
+// TODO: make logic of when to do 'headers' property
+// TODO: make a property for rounding numbers
+
 export default function glimpNormalize (
     obj, 
     options = {
@@ -99,8 +103,10 @@ export default function glimpNormalize (
     // Put non-structured properties into a '...' column.
     let highlyUsedArrayKeys = arrayKeys.filter(key => key.isHighlyUsed);
     let lowlyUsedArrayKeys = arrayKeys.filter(key => !key.isHighlyUsed);
-    let table = [];
-    table.columns = highlyUsedArrayKeys.map(item => item.key);
+    let table = {
+        columns: highlyUsedArrayKeys.map(item => item.key),
+        rows: []
+    };
     if (lowlyUsedArrayKeys.length > 0)
         table.columns.push('...');
     for (
@@ -121,7 +127,7 @@ export default function glimpNormalize (
             if (row[item.key])
                 convertedRow['...'][item.key] = normalize(row[item.key]);
 
-        table.push(convertedRow);        
+        table.rows.push(convertedRow);        
     }
     if (obj.caption)
         table.caption = obj.caption;
