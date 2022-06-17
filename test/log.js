@@ -13,7 +13,7 @@ class complex {
     
     glimpNormalize(options) {
         let normalized = glimpNormalize(this.array, options);
-        normalized.caption = this.name;
+        normalized.glimpCaption = this.name;
         return normalized;
     }
 
@@ -40,12 +40,14 @@ function tableToString (
 
 ) {
 
+// TODO: Cohsider changing behavior of empty tables.
+
     // If no rows, force a table with a row, but kill the headers.
     // This allows later code to still apply.  It minimizes the 
     // custom logic for this situation.
     if (table.rows.length == 0) {
         table.rows = [{ empty: '' }];
-        table.headers = false;
+        table.glimpHeaders = false;
     }
 
     let safeToString = (val) =>  
@@ -149,8 +151,8 @@ function tableToString (
     // put it all together
     let result = 
         topBorder +
-        (headers ? headerRow : '') + 
-        (headers ? divider : '') +
+        (table.glimpHeaders ? headerRow : '') + 
+        (table.glimpHeaders ? divider : '') +
         dataRows +
         botBorder;
 
@@ -176,7 +178,7 @@ function tableToString (
     }
 
     // terminations
-    result = (table.caption ? (table.caption+nl) : '') + result;
+    result = (table.glimpCaption ? (table.glimpCaption+nl) : '') + result;
     return result;
 
 }
