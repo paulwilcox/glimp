@@ -46,41 +46,36 @@ export default function glimpNormalize (
     if(!Array.isArray(obj) && objKeys === null)
         return obj;
 
-    // If keyed object, convert to array if user desires.
-    // Otherwise just clone it but keep as object.  
-    if (objKeys !== null) { 
+    // If object, and no conversion to array, 
+    // then clone, normalize props, and return.
+    if (objKeys !== null && !options.convertObjectsToArrays) {
+        let clone = {};
+        for (let [key, value] of Object.entries(obj)) 
+            clone[key] = 
+                key.startsWith('glimp') 
+                ? value 
+                : normalize(value);
+        clone.glimpType = 'object';
+        return clone;
+    }
 
-        let clone = options.convertObjectsToArrays ? [] : {};
+    // If keyed object, and conversion desired, then convert it.  
+    if (objKeys !== null && options.convertObjectsToArrays) { 
+
+        let clone = [];
         clone = copyGlimpProps(obj, clone);
-        if (options.convertObjectsToArrays)
-            clone.glimpHeaders = false;
+        clone.glimpHeaders = false;
 
-        for (let entry of Object.entries(obj)) {
-
-            let key = entry[0];
-            if (key.startsWith('glimp')) 
-                continue; 
-
-            let value = normalize(entry[1]); 
-                        
-            if (options.convertObjectsToArrays)
-                clone.push({ key, value })
+        for (let [key, value] of Object.entries(obj)) 
+            if (key.startsWith('glimp'))  
+                clone[key] = value; 
             else 
-                clone[key] = value;
+                clone.push({ key, value /*normalization comes later*/ });
 
-        }
-
-        if (!options.convertObjectsToArrays) {
-            clone.glimpType = 'object';
-            return clone;
-        }
-        else { 
-            clone.glimpHeaders = false;
-            obj = clone;
-        }
+        obj = clone;
 
     }    
-
+    
     // At this point, we should always be dealing with an array
 
     // Tally the # of times a key appears in a potentially tabular array.
@@ -113,15 +108,15 @@ export default function glimpNormalize (
     let isHighlyStructured = 
            highlyUsedKeyCount >= arrayKeys.length * options.highlyStructuredArrayProp
         || highlyUsedKeyCount >= options.highlyStructuredArrayCount;
-
+        
     // If not highly structured, just return it as a regular array
     if (!isHighlyStructured) {
         let ar = obj.map(row => normalize(row));
         ar = copyGlimpProps(obj, ar);
-        ar.glimpType = 'array';
+        ar.glimpType = 'array'; 
         return ar;
     }
-
+    
     // Normalize the highly used keys of the structured table.
     let highlyUsedArrayKeys = arrayKeys.filter(key => key.isHighlyUsed);
     let table = {
@@ -147,11 +142,14 @@ export default function glimpNormalize (
         for (let item of highlyUsedArrayKeys) 
             convertedRow[item.key] = normalize(row[item.key]);
 
-        if (lowlyUsedArrayKeys.length > 0) 
-            convertedRow['...'] = {};
-        for (let item of lowlyUsedArrayKeys)
-            if (row[item.key])
-                convertedRow['...'][item.key] = normalize(row[item.key]);
+        if (lowlyUsedArrayKeys.length > 0) {
+            let excess = {};
+            for (let item of lowlyUsedArrayKeys)
+                if (row[item.key])
+                    excess[item.key] = row[item.key];
+            excess = normalize(excess);
+            convertedRow['...'] = excess;
+        }
 
         table.rows.push(convertedRow);        
     }

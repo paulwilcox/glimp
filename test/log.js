@@ -3,12 +3,13 @@ let glimpNormalize = require('../dist/glimp.server.js').glimpNormalize;
 class complex {
 
     constructor () {
-        this.name = 'dummy'
+        this.name = 'dummy';
         this.array = [
-            { a: 'eight', b: 'bee', c: { val: 'see', val2: 'now' } },
-            { a: 'aye', b: 'bea', c: { val: 'sea', val2: 'ward' }, d: 'rare' },
-            { a: 'a', b: 'b', c: { val: 'c', val2: 'c' }, d: this }
-        ]
+            { a: 'eight', b: 'bee', /*c: { val: 'see', val2: 'now' }*/ },
+            { a: 'aye', b: 'bea', /*c: { val: 'sea', val2: 'ward' },*/ d: 'rare' },
+            { a: 'a', b: 'b', /*c: { val: 'c', val2: 'c' } , d: this*/ }
+        ];
+        this.irrelevant = 'dont display this prop';
     }
     
     glimpNormalize(options) {
@@ -21,10 +22,70 @@ class complex {
 
 }
 
+
+// TODO: why is x having trouble on tableToString even though normalization looks good?
+let x = [ { key: 'key', value: 'd' }, { key: 'value', value: 'rare' } ];
+let n = glimpNormalize(x);
+let s = tableToString(n);
+console.log('x:', x);
+console.log('n:', n)
+console.log('s:', s);
+
+console.log(n.rows[0].key)
+console.log(n.rows[0].value)
+console.log(n.rows[1].key)
+console.log(n.rows[1].value)
+
+throw '';
+
 let c = new complex();
 let normalized = glimpNormalize(c); 
-console.log(tableToString(normalized));
+console.log(normalized);
+//throw ''
 
+console.log(glimpToString(normalized));
+
+// convenience character variables
+var chr = (notBb,bb) => internalColBorders || internalRowBorders ? bb : notBb;
+var tl = chr('\u250c', '\u2554'); // top-left
+var tm = chr('\u252c', '\u2564'); // top-middle
+var tr = chr('\u2510', '\u2557'); // top-right
+var ml = chr('\u251c', '\u2560'); // middle-left
+var mm = chr('\u253c', '\u256a'); // middle-middle
+var mr = chr('\u2524', '\u2563'); // middle-right
+var bl = chr('\u2514', '\u255a'); // bottom-left
+var bm = chr('\u2534', '\u2567'); // bottom-middle
+var br = chr('\u2518', '\u255d'); // bottom-right
+var hz = chr('\u2500', '\u2550'); // horizontal
+var vl = chr('\u2502', '\u2551'); // vertical-left
+var vm = chr('\u2502', '\u250a'); // vertical-middle
+var vr = chr('\u2502', '\u2551'); // vertical-right
+var nl = '\r\n';
+var sp = ' ';
+
+function glimpToString (val, preferEmptyString) {
+    return  val === null ? (preferEmptyString ? '' : '<null>') 
+        : val === undefined ? (preferEmptyString ? '' : '<undefined>')
+        : val.glimpType === 'object' ? objectToString(val)
+        : val.glimpType === 'array' ? arrayToString(val)
+        : val.glimpType === 'table' ? tableToString(val)
+        : typeof val === 'string' ? val // TODO: expand to cover other way to be a string
+        : val.toString();
+}
+
+function objectToString (
+    obj 
+) {
+    return '<object - not implemented>'
+}
+
+function arrayToString (
+    array 
+) {
+    for (let row of array)
+        console.log('row:', glimpToString(row))
+    return array.map(row => glimpToString(row)).join(nl);
+}
 
 function tableToString (
 
@@ -42,24 +103,8 @@ function tableToString (
 
 ) {
 
-// TODO: Cohsider changing behavior of empty tables.
-
-    // If no rows, force a table with a row, but kill the headers.
-    // This allows later code to still apply.  It minimizes the 
-    // custom logic for this situation.
-    if (table.rows.length == 0) {
-        table.rows = [{ empty: '' }];
-        table.glimpHeaders = false;
-    }
-
-    let safeToString = (val) =>  
-          val === null ? (preferEmptyString ? '' : '<null>') 
-        : val === undefined ? (preferEmptyString ? '' : '<undefined>')
-        : val.glimpType === 'object' ? (() => {throw 'Not implemented (need objectToString)'})()
-        : val.glimpType === 'array' ? tableToString(val)
-        : val.glimpType === 'table' ? tableToString(val)
-        : typeof val === 'string' ? val // TODO: expand to cover other way to be a string
-        : val.toString();
+    if (table.rows.length == 0) 
+        return '<empty table>'
 
     // To capture how wide, in characters, a column has to be.
     // Starts with header lenghts, widened by value lengths.
@@ -80,7 +125,9 @@ function tableToString (
         // Convert row values to string arrays.
         let rowHeight = 0; // number of lines the row needs to accomodate
         for(let col of table.columns) {
-            row[col] = safeToString(row[col]).split(`\r\n`);
+            row[col] = 
+                glimpToString(row[col], preferEmptyString) // internal bordres don't pass
+                .split(`\r\n`);
             rowHeight = Math.max(rowHeight, row[col].length);
             colWidths[col] = Math.max(
                 colWidths[col], 
@@ -111,24 +158,6 @@ function tableToString (
             row[col][ln] = row[col][ln].padEnd(colWidths[col]);
 //        row[col] = row[col].join(`\r\n`);
     }
-
-    // convenience character variables
-    let chr = (notBb,bb) => internalColBorders || internalRowBorders ? bb : notBb;
-    let tl = chr('\u250c', '\u2554'); // top-left
-    let tm = chr('\u252c', '\u2564'); // top-middle
-    let tr = chr('\u2510', '\u2557'); // top-right
-    let ml = chr('\u251c', '\u2560'); // middle-left
-    let mm = chr('\u253c', '\u256a'); // middle-middle
-    let mr = chr('\u2524', '\u2563'); // middle-right
-    let bl = chr('\u2514', '\u255a'); // bottom-left
-    let bm = chr('\u2534', '\u2567'); // bottom-middle
-    let br = chr('\u2518', '\u255d'); // bottom-right
-    let hz = chr('\u2500', '\u2550'); // horizontal
-    let vl = chr('\u2502', '\u2551'); // vertical-left
-    let vm = chr('\u2502', '\u250a'); // vertical-middle
-    let vr = chr('\u2502', '\u2551'); // vertical-right
-    let nl = '\r\n';
-    let sp = ' ';
 
     let orderedColWidths = table.columns.map(col => colWidths[col]);
     let topBorder = tl+hz + orderedColWidths.map(l => ''.padStart(l,hz+hz+hz)).join(hz+tm+hz) + hz+tr+nl;
