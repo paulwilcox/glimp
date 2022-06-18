@@ -11,8 +11,6 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-// TODO: make logic of when to put in 'caption' property
-// TODO: make logic of when to do 'headers' property
 // TODO: make a property for rounding numbers
 
 function glimpNormalize$1 (
@@ -23,7 +21,7 @@ function glimpNormalize$1 (
         highlyStructuredArrayProp: 0.75, // rate of 'highly used' keys to be 'highly structured'
         highlyUsedKeyCount: 10, // 'highly used' keys are found at this # in rows
         highlyStructuredArrayCount: 2, // # of 'highly used' keys to be 'highly structured'
-        convertObjectsToTables: true, // objects can remain as is, or be converted to tables
+        convertObjectsToArrays: true, // objects can remain as is, or be converted to tables
         _circularTracked: new Set()
     },
 ) {
@@ -60,21 +58,42 @@ function glimpNormalize$1 (
     if(!Array.isArray(obj) && objKeys === null)
         return obj;
 
-    // If keyed object, convert to array.  
-    if (objKeys !== null) 
-        if (options.convertObjectsToTables) {
-            let clone = {};
-            for(let entry of Object.entries(obj)) 
-                clone[entry[0]] = normalize(entry[1]);
+    // If keyed object, convert to array if user desires.
+    // Otherwise just clone it but keep as object.  
+    if (objKeys !== null) { 
+
+        let clone = options.convertObjectsToArrays ? [] : {};
+        clone = copyGlimpProps(obj, clone);
+        if (options.convertObjectsToArrays)
+            clone.glimpHeaders = false;
+
+        for (let entry of Object.entries(obj)) {
+
+            let key = entry[0];
+            if (key.startsWith('glimp')) 
+                continue; 
+
+            let value = normalize(entry[1]); 
+                        
+            if (options.convertObjectsToArrays)
+                clone.push({ key, value });
+            else 
+                clone[key] = value;
+
+        }
+
+        if (!options.convertObjectsToArrays) {
+            clone.glimpType = 'object';
             return clone;
         }
-        else {
-            obj = Object.entries(obj).map(entry => ({ 
-                key: entry[0], 
-                value: normalize(entry[1]) 
-            }));
+        else { 
+            clone.glimpHeaders = false;
+            obj = clone;
         }
-        // At this point, we should always be dealing with an array
+
+    }    
+
+    // At this point, we should always be dealing with an array
 
     // Tally the # of times a key appears in a potentially tabular array.
     // This also tracks order, though with javascript internal logic   
@@ -106,19 +125,26 @@ function glimpNormalize$1 (
     let isHighlyStructured = 
            highlyUsedKeyCount >= arrayKeys.length * options.highlyStructuredArrayProp
         || highlyUsedKeyCount >= options.highlyStructuredArrayCount;
-            
-    // If not highly structured, just return it as a regular array
-    if (!isHighlyStructured) 
-        return obj.map(row => normalize(row));
 
-    // Normalize the structured table.
-    // Put non-structured properties into a '...' column.
+    // If not highly structured, just return it as a regular array
+    if (!isHighlyStructured) {
+        let ar = obj.map(row => normalize(row));
+        ar = copyGlimpProps(obj, ar);
+        ar.glimpType = 'array';
+        return ar;
+    }
+
+    // Normalize the highly used keys of the structured table.
     let highlyUsedArrayKeys = arrayKeys.filter(key => key.isHighlyUsed);
-    let lowlyUsedArrayKeys = arrayKeys.filter(key => !key.isHighlyUsed);
     let table = {
+        glimpType: 'table',
         columns: highlyUsedArrayKeys.map(item => item.key),
         rows: []
     };
+    table = copyGlimpProps(obj, table);
+
+    // Put lowly used keys into a '...' column.
+    let lowlyUsedArrayKeys = arrayKeys.filter(key => !key.isHighlyUsed);
     if (lowlyUsedArrayKeys.length > 0)
         table.columns.push('...');
     for (
@@ -141,10 +167,18 @@ function glimpNormalize$1 (
 
         table.rows.push(convertedRow);        
     }
-    if (obj.caption)
-        table.caption = obj.caption;
+
+    // table terminations
     return table;
 
+}
+
+function copyGlimpProps(sourceObj, targetObj) {
+    if (sourceObj.glimpCaption) 
+        targetObj.glimpCaption = sourceObj.glimpCaption;
+    if (sourceObj.glimpHeaders) 
+        targetObj.glimpHeaders = sourceObj.glimpHeaders;
+    return targetObj;
 }
 
 // Return the keys of a non-primitive, non-array object.

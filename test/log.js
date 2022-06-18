@@ -12,8 +12,10 @@ class complex {
     }
     
     glimpNormalize(options) {
+        options.convertObjectsToArrays = true;
         let normalized = glimpNormalize(this.array, options);
         normalized.glimpCaption = this.name;
+        normalized.glimpHeaders = true;
         return normalized;
     }
 
@@ -53,6 +55,10 @@ function tableToString (
     let safeToString = (val) =>  
           val === null ? (preferEmptyString ? '' : '<null>') 
         : val === undefined ? (preferEmptyString ? '' : '<undefined>')
+        : val.glimpType === 'object' ? (() => {throw 'Not implemented (need objectToString)'})()
+        : val.glimpType === 'array' ? tableToString(val)
+        : val.glimpType === 'table' ? tableToString(val)
+        : typeof val === 'string' ? val // TODO: expand to cover other way to be a string
         : val.toString();
 
     // To capture how wide, in characters, a column has to be.
@@ -88,7 +94,7 @@ function tableToString (
         for(let col of table.columns)
         for(let line = 1; line <= rowHeight; line++) 
             if(row[col].length < line)
-                row.col.push('');     
+                row[col].push('');     
 
     }    
 
@@ -98,26 +104,29 @@ function tableToString (
         .map(col => col.padEnd(colWidths[col]));
 
     // Pad the row values to reach the column widths.
+    // Then condense row values from arrays back into strins
     for (let row of table.rows)
-    for (let col of table.columns)
-    for (let ln = 0; ln < row[col].length; ln++) 
-        row[col][ln] = row[col][ln].padEnd(colWidths[col]);
+    for (let col of table.columns) {
+        for (let ln = 0; ln < row[col].length; ln++) 
+            row[col][ln] = row[col][ln].padEnd(colWidths[col]);
+//        row[col] = row[col].join(`\r\n`);
+    }
 
     // convenience character variables
     let chr = (notBb,bb) => internalColBorders || internalRowBorders ? bb : notBb;
-    let tl = chr('\u250c', '\u2554');
-    let tm = chr('\u252c', '\u2564');
-    let tr = chr('\u2510', '\u2557');
-    let ml = chr('\u251c', '\u2560');
-    let mm = chr('\u253c', '\u256a');
-    let mr = chr('\u2524', '\u2563');
-    let bl = chr('\u2514', '\u255a');
-    let bm = chr('\u2534', '\u2567');
-    let br = chr('\u2518', '\u255d');
-    let hz = chr('\u2500', '\u2550');
-    let vl = chr('\u2502', '\u2551');
-    let vm = chr('\u2502', '\u250a');
-    let vr = chr('\u2502', '\u2551');
+    let tl = chr('\u250c', '\u2554'); // top-left
+    let tm = chr('\u252c', '\u2564'); // top-middle
+    let tr = chr('\u2510', '\u2557'); // top-right
+    let ml = chr('\u251c', '\u2560'); // middle-left
+    let mm = chr('\u253c', '\u256a'); // middle-middle
+    let mr = chr('\u2524', '\u2563'); // middle-right
+    let bl = chr('\u2514', '\u255a'); // bottom-left
+    let bm = chr('\u2534', '\u2567'); // bottom-middle
+    let br = chr('\u2518', '\u255d'); // bottom-right
+    let hz = chr('\u2500', '\u2550'); // horizontal
+    let vl = chr('\u2502', '\u2551'); // vertical-left
+    let vm = chr('\u2502', '\u250a'); // vertical-middle
+    let vr = chr('\u2502', '\u2551'); // vertical-right
     let nl = '\r\n';
     let sp = ' ';
 
@@ -126,10 +135,28 @@ function tableToString (
     let headerRow = vl+sp + paddedHeaders.join(sp+vm+sp) + sp+vr+nl;
     let divider = ml+hz + orderedColWidths.map(l => ''.padStart(l,hz+hz+hz)).join(hz+mm+hz) + hz+mr+nl;
     let dataRows = 
-        table.rows
-        .map(row => {
-            let orderedRow = table.columns.map(col => row[col]);
-            return vl+sp + orderedRow.join(sp+vm+sp) + sp+vr
+        table.rows.map(row => {
+
+            // Remember that at this point, cells within a 
+            // row are string arrays of the same length.
+            // So you can get the length of any one cel and
+            // you get the desired length for the row.
+            let rowHeight = row[table.columns[0]].length; 
+
+            // Cells are string array values of the same length within a row.
+            // Create a single string for each line position. 
+            let lines = [];
+            for(let lineNum = 0; lineNum < rowHeight; lineNum++) {
+                let line = 
+                    table.columns
+                    .map(col => row[col][lineNum])
+                    .join(sp+vm+sp);
+                line = vl+sp + line + sp+vr;
+                lines.push(line);
+            }
+
+            return lines.join(nl);
+
         })
         .join(nl) + nl;
     let botBorder = bl+hz + orderedColWidths.map(l => ''.padStart(l,hz+hz+hz)).join(hz+bm+hz) + hz+br;

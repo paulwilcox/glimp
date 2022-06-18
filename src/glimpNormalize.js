@@ -50,8 +50,10 @@ export default function glimpNormalize (
     // Otherwise just clone it but keep as object.  
     if (objKeys !== null) { 
 
-        let clone = options.convertObjectsToArrays ? {} : [];
+        let clone = options.convertObjectsToArrays ? [] : {};
         clone = copyGlimpProps(obj, clone);
+        if (options.convertObjectsToArrays)
+            clone.glimpHeaders = false;
 
         for (let entry of Object.entries(obj)) {
 
@@ -68,13 +70,17 @@ export default function glimpNormalize (
 
         }
 
-        if (!options.convertObjectsToArrays)
+        if (!options.convertObjectsToArrays) {
+            clone.glimpType = 'object';
             return clone;
-        else 
+        }
+        else { 
+            clone.glimpHeaders = false;
             obj = clone;
+        }
 
-    }
-        
+    }    
+
     // At this point, we should always be dealing with an array
 
     // Tally the # of times a key appears in a potentially tabular array.
@@ -107,17 +113,19 @@ export default function glimpNormalize (
     let isHighlyStructured = 
            highlyUsedKeyCount >= arrayKeys.length * options.highlyStructuredArrayProp
         || highlyUsedKeyCount >= options.highlyStructuredArrayCount;
-            
+
     // If not highly structured, just return it as a regular array
     if (!isHighlyStructured) {
         let ar = obj.map(row => normalize(row));
         ar = copyGlimpProps(obj, ar);
+        ar.glimpType = 'array';
         return ar;
     }
 
     // Normalize the highly used keys of the structured table.
     let highlyUsedArrayKeys = arrayKeys.filter(key => key.isHighlyUsed);
     let table = {
+        glimpType: 'table',
         columns: highlyUsedArrayKeys.map(item => item.key),
         rows: []
     };
