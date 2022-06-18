@@ -92,18 +92,16 @@ function tableToString (
 
     }    
 
+    // Pad the header values to reach the column widths
+    let paddedHeaders = 
+        table.columns
+        .map(col => col.padEnd(colWidths[col]));
+
     // Pad the row values to reach the column widths.
-    // Do before padding headers as these get referenced here
     for (let row of table.rows)
     for (let col of table.columns)
     for (let ln = 0; ln < row[col].length; ln++) 
         row[col][ln] = row[col][ln].padEnd(colWidths[col]);
-
-    // Pad the header values to reach the column widths
-    for (let c = 0; c < table.columns.length; c++) {
-        let col = table.columns[c];
-        table.columns[c] = col.padEnd(colWidths[col]);
-    }
 
     // convenience character variables
     let chr = (notBb,bb) => internalColBorders || internalRowBorders ? bb : notBb;
@@ -125,7 +123,7 @@ function tableToString (
 
     let orderedColWidths = table.columns.map(col => colWidths[col]);
     let topBorder = tl+hz + orderedColWidths.map(l => ''.padStart(l,hz+hz+hz)).join(hz+tm+hz) + hz+tr+nl;
-    let headerRow = vl+sp + table.columns.join(sp+vm+sp) + sp+vr+nl;
+    let headerRow = vl+sp + paddedHeaders.join(sp+vm+sp) + sp+vr+nl;
     let divider = ml+hz + orderedColWidths.map(l => ''.padStart(l,hz+hz+hz)).join(hz+mm+hz) + hz+mr+nl;
     let dataRows = 
         table.rows
