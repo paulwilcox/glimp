@@ -117,19 +117,21 @@ export default function glimpNormalize (
         return ar;
     }
     
-    // Normalize the highly used keys of the structured table.
+    // Split keys into highly vs lowly used
     let highlyUsedArrayKeys = arrayKeys.filter(key => key.isHighlyUsed);
+    let lowlyUsedArrayKeys = arrayKeys.filter(key => !key.isHighlyUsed);
+
+    // Create the table object to house restructured data
     let table = {
         glimpType: 'table',
         columns: highlyUsedArrayKeys.map(item => item.key),
         rows: []
     };
     table = copyGlimpProps(obj, table);
-
-    // Put lowly used keys into a '...' column.
-    let lowlyUsedArrayKeys = arrayKeys.filter(key => !key.isHighlyUsed);
-    if (lowlyUsedArrayKeys.length > 0)
+    if (lowlyUsedArrayKeys.length > 0) // Lowly used keys go into '...' column.
         table.columns.push('...');
+
+    // Populate the table
     for (
         let r = 0; 
         r < obj.length && r < options.maxRows; 
@@ -144,7 +146,7 @@ export default function glimpNormalize (
 
         if (lowlyUsedArrayKeys.length > 0) {
             let excess = {};
-            for (let item of lowlyUsedArrayKeys)
+            for (let item of lowlyUsedArrayKeys) 
                 if (row[item.key])
                     excess[item.key] = row[item.key];
             excess = normalize(excess);

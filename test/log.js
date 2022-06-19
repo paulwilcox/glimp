@@ -1,69 +1,22 @@
-let glimpNormalize = require('../dist/glimp.server.js').glimpNormalize;
-
-class complex {
-
-    constructor () {
-        this.name = 'dummy';
-        this.array = [
-            { a: 'eight', b: 'bee', /*c: { val: 'see', val2: 'now' }*/ },
-            { a: 'aye', b: 'bea', /*c: { val: 'sea', val2: 'ward' },*/ d: 'rare' },
-            { a: 'a', b: 'b', /*c: { val: 'c', val2: 'c' } , d: this*/ }
-        ];
-        this.irrelevant = 'dont display this prop';
-    }
-    
-    glimpNormalize(options) {
-        options.convertObjectsToArrays = true;
-        let normalized = glimpNormalize(this.array, options);
-        normalized.glimpCaption = this.name;
-        normalized.glimpHeaders = true;
-        return normalized;
-    }
-
-}
-
-
-// TODO: why is x having trouble on tableToString even though normalization looks good?
-let x = [ { key: 'key', value: 'd' }, { key: 'value', value: 'rare' } ];
-let n = glimpNormalize(x);
-let s = tableToString(n);
-console.log('x:', x);
-console.log('n:', n)
-console.log('s:', s);
-
-console.log(n.rows[0].key)
-console.log(n.rows[0].value)
-console.log(n.rows[1].key)
-console.log(n.rows[1].value)
-
-throw '';
-
-let c = new complex();
-let normalized = glimpNormalize(c); 
-console.log(normalized);
-//throw ''
-
-console.log(glimpToString(normalized));
 
 // convenience character variables
-var chr = (notBb,bb) => internalColBorders || internalRowBorders ? bb : notBb;
-var tl = chr('\u250c', '\u2554'); // top-left
-var tm = chr('\u252c', '\u2564'); // top-middle
-var tr = chr('\u2510', '\u2557'); // top-right
-var ml = chr('\u251c', '\u2560'); // middle-left
-var mm = chr('\u253c', '\u256a'); // middle-middle
-var mr = chr('\u2524', '\u2563'); // middle-right
-var bl = chr('\u2514', '\u255a'); // bottom-left
-var bm = chr('\u2534', '\u2567'); // bottom-middle
-var br = chr('\u2518', '\u255d'); // bottom-right
-var hz = chr('\u2500', '\u2550'); // horizontal
-var vl = chr('\u2502', '\u2551'); // vertical-left
-var vm = chr('\u2502', '\u250a'); // vertical-middle
-var vr = chr('\u2502', '\u2551'); // vertical-right
+var tl = '\u250c'; // top-left
+var tm = '\u252c'; // top-middle
+var tr = '\u2510'; // top-right
+var ml = '\u251c'; // middle-left
+var mm = '\u253c'; // middle-middle
+var mr = '\u2524'; // middle-right
+var bl = '\u2514'; // bottom-left
+var bm = '\u2534'; // bottom-middle
+var br = '\u2518'; // bottom-right
+var hz = '\u2500'; // horizontal
+var vl = '\u2502'; // vertical-left
+var vm = '\u2502'; // vertical-middle
+var vr = '\u2502'; // vertical-right
 var nl = '\r\n';
 var sp = ' ';
 
-function glimpToString (val, preferEmptyString) {
+let glimpToString = (val, preferEmptyString) => {
     return  val === null ? (preferEmptyString ? '' : '<null>') 
         : val === undefined ? (preferEmptyString ? '' : '<undefined>')
         : val.glimpType === 'object' ? objectToString(val)
@@ -73,21 +26,21 @@ function glimpToString (val, preferEmptyString) {
         : val.toString();
 }
 
-function objectToString (
+let objectToString = (
     obj 
-) {
+) => {
     return '<object - not implemented>'
 }
 
-function arrayToString (
+let arrayToString = (
     array 
-) {
+) => {
     for (let row of array)
         console.log('row:', glimpToString(row))
     return array.map(row => glimpToString(row)).join(nl);
 }
 
-function tableToString (
+let tableToString = (
 
     // The table produced out of glimpNormalize
     table, 
@@ -101,20 +54,40 @@ function tableToString (
     // Numeric array.  Add special column borders before the stated indices
     internalColBorders = null 
 
-) {
+) => {
 
-    if (table.rows.length == 0) 
+    if (vm === undefined)
+        throw 'tableToString has lost access to convenience characters';
+
+    // Override borders if there are internal borders
+    let _tl = tl; let _tm = tm; let _tr = tr;
+    let _ml = ml; let _mm = mm; let _mr = mr;
+    let _bl = bl; let _bm = bm; let _br = br;
+    let _vl = vl; let _vm = vm; let _vr = vr;
+    let _hz = hz;
+    if (internalColBorders || internalRowBorders) {
+        _tl = '\u2554'; _tm = '\u2564'; _tr = '\u2557';
+        _ml = '\u2560'; _mm = '\u256a'; _mr = '\u2563';
+        _bl = '\u255a'; _bm = '\u2567'; _br = '\u255d';
+        _vl = '\u2551'; _vm = '\u250a'; _vr = '\u2551';
+        _hz = '\u2550'; 
+    }
+
+    let columns = table.columns;
+    let rows = table.rows;
+
+    if (rows.length == 0) 
         return '<empty table>'
 
     // To capture how wide, in characters, a column has to be.
     // Starts with header lenghts, widened by value lengths.
     let colWidths = {};
-    for(let col of table.columns) 
+    for(let col of columns) 
         colWidths[col] = col.length;
 
     // Convert row values to string representations.
     // These will actually be string arrays, to accomodate multiple lines.
-    for(let _row of table.rows) {
+    for(let _row of rows) {
         
         let row = 
               _row === null ? '<null>'
@@ -124,11 +97,12 @@ function tableToString (
 
         // Convert row values to string arrays.
         let rowHeight = 0; // number of lines the row needs to accomodate
-        for(let col of table.columns) {
+        for(let col of columns) {
             row[col] = 
                 glimpToString(row[col], preferEmptyString) // internal bordres don't pass
                 .split(`\r\n`);
             rowHeight = Math.max(rowHeight, row[col].length);
+
             colWidths[col] = Math.max(
                 colWidths[col], 
                 ...row[col].map(val => val.length)
@@ -138,7 +112,7 @@ function tableToString (
         // All row values (arrays of strings), 
         // must be set to the same array length.
         // So push blank lines if necessary.
-        for(let col of table.columns)
+        for(let col of columns)
         for(let line = 1; line <= rowHeight; line++) 
             if(row[col].length < line)
                 row[col].push('');     
@@ -147,48 +121,59 @@ function tableToString (
 
     // Pad the header values to reach the column widths
     let paddedHeaders = 
-        table.columns
+        columns
         .map(col => col.padEnd(colWidths[col]));
 
     // Pad the row values to reach the column widths.
     // Then condense row values from arrays back into strins
-    for (let row of table.rows)
-    for (let col of table.columns) {
+    for (let row of rows)
+    for (let col of columns) {
         for (let ln = 0; ln < row[col].length; ln++) 
             row[col][ln] = row[col][ln].padEnd(colWidths[col]);
-//        row[col] = row[col].join(`\r\n`);
     }
 
-    let orderedColWidths = table.columns.map(col => colWidths[col]);
-    let topBorder = tl+hz + orderedColWidths.map(l => ''.padStart(l,hz+hz+hz)).join(hz+tm+hz) + hz+tr+nl;
-    let headerRow = vl+sp + paddedHeaders.join(sp+vm+sp) + sp+vr+nl;
-    let divider = ml+hz + orderedColWidths.map(l => ''.padStart(l,hz+hz+hz)).join(hz+mm+hz) + hz+mr+nl;
+    let orderedColWidths = columns.map(col => colWidths[col]);
+    let topBorder = 
+        _tl+_hz + 
+        orderedColWidths.map(l => ''.padStart(l,_hz+_hz+_hz)).join(_hz+_tm+_hz) + 
+        _hz+_tr+nl;
+    let headerRow = 
+        _vl+sp + 
+        paddedHeaders.join(sp+_vm+sp) + 
+        sp+_vr+nl;
+    let divider = 
+        _ml+_hz + 
+        orderedColWidths.map(l => ''.padStart(l,_hz+_hz+_hz)).join(_hz+_mm+_hz) + 
+        _hz+_mr+nl;
     let dataRows = 
-        table.rows.map(row => {
+        rows.map(row => {
 
             // Remember that at this point, cells within a 
             // row are string arrays of the same length.
             // So you can get the length of any one cel and
             // you get the desired length for the row.
-            let rowHeight = row[table.columns[0]].length; 
+            let rowHeight = row[columns[0]].length; 
 
             // Cells are string array values of the same length within a row.
             // Create a single string for each line position. 
             let lines = [];
             for(let lineNum = 0; lineNum < rowHeight; lineNum++) {
                 let line = 
-                    table.columns
+                    columns
                     .map(col => row[col][lineNum])
-                    .join(sp+vm+sp);
-                line = vl+sp + line + sp+vr;
-                lines.push(line);
+                    .join(sp+_vm+sp);
+                line = _vl+sp + line + sp+_vr;
+                lines.push(line);''
             }
 
             return lines.join(nl);
 
         })
         .join(nl) + nl;
-    let botBorder = bl+hz + orderedColWidths.map(l => ''.padStart(l,hz+hz+hz)).join(hz+bm+hz) + hz+br;
+    let botBorder = 
+        _bl+_hz + 
+        orderedColWidths.map(l => ''.padStart(l,_hz+_hz+_hz)).join(_hz+_bm+_hz) + 
+        _hz+_br;
 
     // Add the special row borders if requested
     if (internalRowBorders) {
@@ -196,7 +181,7 @@ function tableToString (
         for (let position of internalRowBorders.reverse())
             dataRows.splice(position, 0, 
                 divider
-                .replace(new RegExp(hz,'g'), '\u2550')
+                .replace(new RegExp(_hz,'g'), '\u2550')
                 .replace(nl,'')
             );
         dataRows = dataRows.join(nl);
@@ -223,10 +208,10 @@ function tableToString (
         for(let position of internalColBorders) {
             let replacer = (val,rep) => 
                 result.replace(new RegExp(`(?<=^.{${position}})${val}`,'gm'), rep);
-            result = replacer(vm,vl);
-            result = replacer(tm, '\u2566');
-            result = replacer(mm, '\u256c');
-            result = replacer(bm, '\u2569');
+            result = replacer(_vm,_vl);
+            result = replacer(_tm, '\u2566');
+            result = replacer(_mm, '\u256c');
+            result = replacer(_bm, '\u2569');
         }
 
     }
@@ -236,3 +221,34 @@ function tableToString (
     return result;
 
 }
+
+
+let glimpNormalize = require('../dist/glimp.server.js').glimpNormalize;
+
+class complex {
+
+    constructor () {
+        this.name = 'dummy';
+        this.array = [
+            { a: 'eight', b: 'bee', /*c: { val: 'see', val2: 'now' }*/ },
+            { a: 'aye', b: 'bea', /*c: { val: 'sea', val2: 'ward' },*/ d: 'rare' },
+            { a: 'a', b: 'b', /*c: { val: 'c', val2: 'c' }m*/ d: this }
+        ];
+        this.irrelevant = 'dont display this prop';
+    }
+    
+    glimpNormalize(options) {
+        options.convertObjectsToArrays = true;
+        let normalized = glimpNormalize(this.array, options);
+        normalized.glimpCaption = this.name;
+        normalized.glimpHeaders = true;
+        return normalized;
+    }
+
+}
+
+
+let c = new complex();
+let normalized = glimpNormalize(c); 
+console.log(normalized);
+console.log(glimpToString(normalized));
