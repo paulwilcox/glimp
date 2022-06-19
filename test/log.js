@@ -35,8 +35,6 @@ let objectToString = (
 let arrayToString = (
     array 
 ) => {
-    for (let row of array)
-        console.log('row:', glimpToString(row))
     return array.map(row => glimpToString(row)).join(nl);
 }
 
@@ -230,9 +228,9 @@ class complex {
     constructor () {
         this.name = 'dummy';
         this.array = [
-            { a: 'eight', b: 'bee', /*c: { val: 'see', val2: 'now' }*/ },
-            { a: 'aye', b: 'bea', /*c: { val: 'sea', val2: 'ward' },*/ d: 'rare' },
-            { a: 'a', b: 'b', /*c: { val: 'c', val2: 'c' }m*/ d: this }
+            { a: 'eight', b: 'bee', c: { val: 'see', val2: 'now' } },
+            { a: 'aye', b: 'bea', c: { val: 'sea', val2: 'ward' }, d: 'rare' },
+            { a: 'a', b: 'b', c: { val: 'c', val2: 'c' }, d: this }
         ];
         this.irrelevant = 'dont display this prop';
     }
@@ -249,6 +247,7 @@ class complex {
 
 
 let c = new complex();
-let normalized = glimpNormalize(c); 
-console.log(normalized);
-console.log(glimpToString(normalized));
+let n = glimpNormalize(c); 
+let s = glimpToString(n)
+console.log(n);
+console.log(s);

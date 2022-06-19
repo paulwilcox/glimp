@@ -17,7 +17,14 @@ export default function glimpNormalize (
     // Circular reference management
     if(options._circularTracked.has(obj))
         return '<circular>';
-    options._circularTracked.add(obj);
+    try {
+        obj.glimpIsReferenceType = true; // if it's primitive, this property won't set
+        options._circularTracked.add(obj);
+    }
+    catch (e) {
+        if (!e.message.startsWith('Cannot create property'))
+            throw e;
+    }
     let normalize = (obj) => {
         // clone it, otherwise, a single list exists and multiple
         // references that are non-circular are picked up.
