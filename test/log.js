@@ -215,7 +215,7 @@ let tableToString = (
     }
 
     // terminations
-    result = (table.glimpCaption ? (table.glimpCaption+nl) : '') + result;
+    result = (table.glimpCaption ? (sp+table.glimpCaption+nl) : '') + result;
     return result;
 
 }
@@ -249,5 +249,10 @@ class complex {
 let c = new complex();
 let n = glimpNormalize(c); 
 let s = glimpToString(n)
-console.log(n);
+//console.log(n);
 console.log(s);
+
+// TODO: create maximum column width, then wrap or truncate 
+// internal contents if too wide.
+// TODO: use this to truncate the output when necessary
+console.log(process.stdout.columns);
