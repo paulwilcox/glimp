@@ -252,7 +252,18 @@ let s = glimpToString(n)
 //console.log(n);
 console.log(s);
 
-// TODO: create maximum column width, then wrap or truncate 
-// internal contents if too wide.
-// TODO: use this to truncate the output when necessary
-console.log(process.stdout.columns);
+// TODO: Considering how to scroll in the terminal
+console.log({
+    procCols: process.stdout.columns,
+    procRows: process.stdout.rows,
+    strCols: Math.max(...s.split(/\n/).map(line => line.length)),
+    strRows:  s.split(/\n/).length
+});
+
+process.stdout.write('hello')
+process.stdout.cursorTo(2)
+process.stdout.clearLine(-1)
+process.stdout.write('\n')
+process.stdout.write('goodbye');
+
+
