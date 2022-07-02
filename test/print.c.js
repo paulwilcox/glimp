@@ -1,4 +1,4 @@
-import { print } from '../src/glimp.js';
+import print from '../src/glimp.client.js';
 
 let samples = [
 

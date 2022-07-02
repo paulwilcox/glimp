@@ -1,6 +1,7 @@
 import printCss from './print.css.js';
 import { addPagerToTables, addAnchorClickEvents } from './pager.js';
 
+// TODO: there is now glimpNormalize.  Change to use it.
 export default function print (target, obj, caption) {
 
     addDefaultCss();

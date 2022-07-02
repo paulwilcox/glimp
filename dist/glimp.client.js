@@ -339,6 +339,7 @@ function tableGet(
     return parseInt(table.getAttribute(`data-${dataAttributeName}`));
 }
 
+// TODO: there is now glimpNormalize.  Change to use it.
 function print (target, obj, caption) {
 
     addDefaultCss();

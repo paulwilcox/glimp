@@ -32,6 +32,9 @@ let s = glimpToString(n)
 console.log(s);
 
 // TODO: Considering how to scroll in the terminal
+// Environment variables that can be shared between node and powershell suffer size limits
+// Likely to write to glimpSession.variables.js and glimpSession.toString.js.
+// Do I need a global cli library to read these from the terminal?  
 console.log({
     procCols: process.stdout.columns,
     procRows: process.stdout.rows,
@@ -39,6 +42,7 @@ console.log({
     strRows:  s.split(/\n/).length
 });
 
+// Just some experiments, but not likely the approach I'll take
 process.stdout.write('hello')
 process.stdout.cursorTo(2)
 process.stdout.clearLine(-1)
