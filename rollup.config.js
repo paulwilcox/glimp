@@ -34,6 +34,6 @@ export default [
             format: 'cjs'
         },
         plugins: licensePlugin
-    }    
+    }  
 ];
 

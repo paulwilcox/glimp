@@ -205,170 +205,226 @@ function tryObjectKeys (
     }
 }
 
-let glimpNormalize = glimpNormalize$1;
+function glimpToString$1 (val, preferEmptyString) {
+    return  val === null ? (preferEmptyString ? '' : '<null>') 
+        : val === undefined ? (preferEmptyString ? '' : '<undefined>')
+        : val.glimpType === 'object' ? objectToString()
+        : val.glimpType === 'array' ? arrayToString(val)
+        : val.glimpType === 'table' ? tableToString(val)
+        : typeof val === 'string' ? val // TODO: expand to cover other way to be a string
+        : val.toString();
+}
 
-/*
-function tableToString (
-    data, 
-    caption,
-    mapper = x => x, 
-    limit = 50, 
-    headers = true,
-    preferEmptyString = true, // if false, '<null>' and '<undefined>' can show
-    bordersBefore = null // [[a,b,c],[x,y,z]], borders before resp. row and col ix posits
-) {
 
-    if (self.isToStringOverwritten(data)) 
-        return data.toString();
+// convenience character variables
+var tl = '\u250c'; // top-left
+var tm = '\u252c'; // top-middle
+var tr = '\u2510'; // top-right
+var ml = '\u251c'; // middle-left
+var mm = '\u253c'; // middle-middle
+var mr = '\u2524'; // middle-right
+var bl = '\u2514'; // bottom-left
+var bm = '\u2534'; // bottom-middle
+var br = '\u2518'; // bottom-right
+var hz = '\u2500'; // horizontal
+var vl = '\u2502'; // vertical-left
+var vm = '\u2502'; // vertical-middle
+var vr = '\u2502'; // vertical-right
+var nl = '\r\n';
+var sp = ' ';
 
-    let props = [];
-    let vals = [];
+let objectToString = (
+    obj 
+) => {
+    return '<object - not implemented>'
+};
 
-    if (data.length == 0) {
-        data = [{ empty: '' }];
-        headers = false;
+let arrayToString = (
+    array 
+) => {
+    return array.map(row => glimpToString$1(row)).join(nl);
+};
+
+let tableToString = (
+
+    // The table produced out of glimpNormalize
+    table, 
+
+    // If true, '' instead of '<null>' or '<undefined>' 
+    preferEmptyString = true, 
+
+    // Numeric array.  Add special row borders before the stated indices. 
+    internalRowBorders = null,  
+    
+    // Numeric array.  Add special column borders before the stated indices
+    internalColBorders = null 
+
+) => {
+
+    // Override borders if there are internal borders
+    let _tl = tl; let _tm = tm; let _tr = tr;
+    let _ml = ml; let _mm = mm; let _mr = mr;
+    let _bl = bl; let _bm = bm; let _br = br;
+    let _vl = vl; let _vm = vm; let _vr = vr;
+    let _hz = hz;
+    if (internalColBorders || internalRowBorders) {
+        _tl = '\u2554'; _tm = '\u2564'; _tr = '\u2557';
+        _ml = '\u2560'; _mm = '\u256a'; _mr = '\u2563';
+        _bl = '\u255a'; _bm = '\u2567'; _br = '\u255d';
+        _vl = '\u2551'; _vm = '\u250a'; _vr = '\u2551';
+        _hz = '\u2550'; 
     }
 
-    let safeToString = (val) =>  
-            val === null ? (preferEmptyString ? '' : '<null>') 
-        : val === undefined ? (preferEmptyString ? '' : '<undefined>')
-        : val.toString();
+    let columns = table.columns;
+    let rows = table.rows;
 
-    // Initially, values are multi-line.  Even if just 
-    // one line they're represented as an array.
-    let toStringArray = (val) => safeToString(val).split(`\r\n`);
+    if (rows.length == 0) 
+        return '<empty table>'
 
-    for(let r = 0; r < data.length; r++) {
+    // To capture how wide, in characters, a column has to be.
+    // Starts with header lenghts, widened by value lengths.
+    let colWidths = {};
+    for(let col of columns) 
+        colWidths[col] = col.length;
+
+    // Convert row values to string representations.
+    // These will actually be string arrays, to accomodate multiple lines.
+    for(let _row of rows) {
         
-        if (r >= limit)
-            break;
+        let row = 
+              _row === null ? '<null>'
+            : _row === undefined ? '<undefined>'
+            : typeof _row !== 'object' ? '<non-object>' // perhaps better handling later
+            : _row; 
 
-        let row = mapper(data[r]);
-        if (row == null)
-            row = '<null>';
+        // Convert row values to string arrays.
+        let rowHeight = 0; // number of lines the row needs to accomodate
+        for(let col of columns) {
+            row[col] = 
+                glimpToString$1(row[col], preferEmptyString) // internal bordres don't pass
+                .split(`\r\n`);
+            rowHeight = Math.max(rowHeight, row[col].length);
 
-        if (typeof row === 'object') 
-            row = self.noUndefined(row);
-        else 
-            row = { '<primitive>': row }; 
-
-        let rowVals = [];
-        let rowProps = Object.getOwnPropertyNames(row);
-
-        // force the order of props in previous rows
-        for(let i = 0; i < props.length; i++) {
-            let prop = props[i];
-            let arrayVal = toStringArray(row[prop]);
-            rowVals.push(arrayVal);
+            colWidths[col] = Math.max(
+                colWidths[col], 
+                ...row[col].map(val => val.length)
+            );
         }
 
-        // add new props if not previously known
-        for(let i = 0; i < rowProps.length; i++) {
-            let prop = rowProps[i];
-            let arrayVal = toStringArray(row[prop]);
-
-            if (!props.includes(prop)) {
-                props.push(prop);
-                rowVals.push(arrayVal);
-            }
-        }
-
-        // spread out the arrayVals into different lines
-        // [['one line'],['two','lines']] becomes 
-        // [['one line', 'two'], ['', 'lines']]
-        let maxLen = Math.max(...rowVals.map(arrayVal => arrayVal.length));
-        for(let i = 0; i < maxLen; i++) {
-            let flattened = [];
-            for (let arrayVal of rowVals) 
-                flattened.push(arrayVal[i] || '');
-            vals.push(flattened);
-        }
+        // All row values (arrays of strings), 
+        // must be set to the same array length.
+        // So push blank lines if necessary.
+        for(let col of columns)
+        for(let line = 1; line <= rowHeight; line++) 
+            if(row[col].length < line)
+                row[col].push('');     
 
     }    
 
-    let lengths = [];
+    // Pad the header values to reach the column widths
+    let paddedHeaders = 
+        columns
+        .map(col => col.padEnd(colWidths[col]));
 
-    for (let i = 0; i < props.length; i++) 
-        lengths[i] = Math.max(
-            ...vals.map(row => safeToString(row[i]).length), 
-            headers ? props[i].length : 0
-        );
+    // Pad the row values to reach the column widths.
+    // Then condense row values from arrays back into strins
+    for (let row of rows)
+    for (let col of columns) {
+        for (let ln = 0; ln < row[col].length; ln++) 
+            row[col][ln] = row[col][ln].padEnd(colWidths[col]);
+    }
 
-    for(let i = 0; i < props.length; i++)
-        props[i] = props[i].padEnd(lengths[i]);
+    let orderedColWidths = columns.map(col => colWidths[col]);
+    let topBorder = 
+        _tl+_hz + 
+        orderedColWidths.map(l => ''.padStart(l,_hz+_hz+_hz)).join(_hz+_tm+_hz) + 
+        _hz+_tr+nl;
+    let headerRow = 
+        _vl+sp + 
+        paddedHeaders.join(sp+_vm+sp) + 
+        sp+_vr+nl;
+    let divider = 
+        _ml+_hz + 
+        orderedColWidths.map(l => ''.padStart(l,_hz+_hz+_hz)).join(_hz+_mm+_hz) + 
+        _hz+_mr+nl;
+    let dataRows = 
+        rows.map(row => {
 
-    for(let row of vals)
-        for(let i = 0; i < props.length; i++) 
-            row[i] = safeToString(row[i]).padEnd(lengths[i]);
+            // Remember that at this point, cells within a 
+            // row are string arrays of the same length.
+            // So you can get the length of any one cel and
+            // you get the desired length for the row.
+            let rowHeight = row[columns[0]].length; 
 
-    let chr = (notBb,bb) => bordersBefore ? bb : notBb;
-    let tl = chr('\u250c', '\u2554');
-    let tm = chr('\u252c', '\u2564');
-    let tr = chr('\u2510', '\u2557');
-    let ml = chr('\u251c', '\u2560');
-    let mm = chr('\u253c', '\u256a');
-    let mr = chr('\u2524', '\u2563');
-    let bl = chr('\u2514', '\u255a');
-    let bm = chr('\u2534', '\u2567');
-    let br = chr('\u2518', '\u255d');
-    let hz = chr('\u2500', '\u2550');
-    let vl = chr('\u2502', '\u2551');
-    let vm = chr('\u2502', '\u250a');
-    let vr = chr('\u2502', '\u2551');
-    let nl = '\r\n';
-    let sp = ' ';
+            // Cells are string array values of the same length within a row.
+            // Create a single string for each line position. 
+            let lines = [];
+            for(let lineNum = 0; lineNum < rowHeight; lineNum++) {
+                let line = 
+                    columns
+                    .map(col => row[col][lineNum])
+                    .join(sp+_vm+sp);
+                line = _vl+sp + line + sp+_vr;
+                lines.push(line);            }
 
-    let topBorder = tl+hz + lengths.map(l => ''.padStart(l,hz+hz+hz)).join(hz+tm+hz) + hz+tr+nl;
-    let headerRow = vl+sp + props.join(sp+vm+sp) + sp+vr+nl;
-    let divider = ml+hz + lengths.map(l => ''.padStart(l,hz+hz+hz)).join(hz+mm+hz) + hz+mr+nl;
-    let dataRows = vals.map(row => vl+sp + row.join(sp+vm+sp) + sp+vr).join(nl) + nl;
-    let botBorder = bl+hz + lengths.map(l => ''.padStart(l,hz+hz+hz)).join(hz+bm+hz) + hz+br;
+            return lines.join(nl);
 
-    // add special row borders
-    if (bordersBefore && bordersBefore[0]) {
-        dataRows = dataRows.split(nl)
-        let bbRev = [...bordersBefore[0]];
-        bbRev.reverse();
-        for (let bb of bbRev)
-            dataRows.splice(bb, 0, 
+        })
+        .join(nl) + nl;
+    let botBorder = 
+        _bl+_hz + 
+        orderedColWidths.map(l => ''.padStart(l,_hz+_hz+_hz)).join(_hz+_bm+_hz) + 
+        _hz+_br;
+
+    // Add the special row borders if requested
+    if (internalRowBorders) {
+        dataRows = dataRows.split(nl);
+        for (let position of internalRowBorders.reverse())
+            dataRows.splice(position, 0, 
                 divider
-                    .replace(new RegExp(hz,'g'), '\u2550')
-                    .replace(nl,'')
+                .replace(new RegExp(_hz,'g'), '\u2550')
+                .replace(nl,'')
             );
         dataRows = dataRows.join(nl);
     }
 
+    // put it all together
     let result = 
         topBorder +
-        (headers ? headerRow : '') + 
-        (headers ? divider : '') +
+        (table.glimpHeaders ? headerRow : '') + 
+        (table.glimpHeaders ? divider : '') +
         dataRows +
         botBorder;
 
-    // add special column borders
-    if (bordersBefore && bordersBefore[1]) {
+    // Add the special column borders if requested
+    if (internalColBorders) {
 
-        bordersBefore[1] = // convert col posit to char posit
+        // convert col posit to char posit
+        internalColBorders = 
             [...topBorder]
             .map((chr,ix) => chr == tm ? ix : null)
             .filter(ix => ix !== null)
-            .filter((x,ix) => bordersBefore[1].includes(ix));
+            .filter((x,ix) => internalColBorders.includes(ix));
 
-        for(let bb of bordersBefore[1]) {
+        for(let position of internalColBorders) {
             let replacer = (val,rep) => 
-                result.replace(new RegExp(`(?<=^.{${bb}})${val}`,'gm'), rep);
-            result = replacer(vm,vl);
-            result = replacer(tm, '\u2566');
-            result = replacer(mm, '\u256c');
-            result = replacer(bm, '\u2569');
+                result.replace(new RegExp(`(?<=^.{${position}})${val}`,'gm'), rep);
+            result = replacer(_vm,_vl);
+            result = replacer(_tm, '\u2566');
+            result = replacer(_mm, '\u256c');
+            result = replacer(_bm, '\u2569');
         }
 
     }
 
-    result = (caption ? (caption+nl) : '') + result;
+    // terminations
+    result = (table.glimpCaption ? (sp+table.glimpCaption+nl) : '') + result;
     return result;
 
-}
-*/
+};
+
+let glimpNormalize = glimpNormalize$1;
+let glimpToString = glimpToString$1;
 
 exports.glimpNormalize = glimpNormalize;
+exports.glimpToString = glimpToString;
